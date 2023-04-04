@@ -2,11 +2,11 @@
 #![allow(unused_variables)]
 #![allow(unreachable_code)]
 
-use std::marker::PhantomData;
+use std::{fmt, marker::PhantomData};
 
 use halo2_proofs::{
     arithmetic::FieldExt,
-    circuit::Layouter,
+    circuit::{Chip, Layouter},
     plonk::{Advice, Any, Column, ConstraintSystem, Error},
 };
 
@@ -66,6 +66,35 @@ impl<F: FieldExt> Ripemd160Chip<F> {
     pub fn load(&self, layouter: &mut impl Layouter<F>) -> Result<(), Error> {
         Ok(())
     }
+}
+
+const BLOCK_SIZE: usize = 16;
+const DIGEST_SIZE: usize = 5;
+
+/// The set of circuit instructions required to use the [`RIPEMD160`] gadget.
+pub trait RIPEMD160Instructions<F: FieldExt>: Chip<F> {
+    /// Variable represening the RIPEMD-160 internal state.
+    type State: Clone + fmt::Debug;
+    /// Variable representing a 32-bit word of the input block to the RIPEMD-160 compression function
+    type BlockWord: Copy + fmt::Debug + Default;
+
+    /// Places the RIPEMD-160 IV in the circuit, returning the initial state variable
+    fn init_vector(&self, layouter: &mut impl Layouter<F>) -> Result<Self::State, Error>;
+
+    /// Starting from the given initialized state, processes a block of input and returns the final state
+    fn compress(
+        &self,
+        layouter: &mut impl Layouter<F>,
+        initialized_state: &Self::State,
+        input: [Self::BlockWord; BLOCK_SIZE],
+    ) -> Result<Self::State, Error>;
+
+    /// Converts the given state into a message digest
+    fn digest(
+        &self,
+        layouter: &mut impl Layouter<F>,
+        state: &Self::State,
+    ) -> Result<[Self::BlockWord; DIGEST_SIZE], Error>;
 }
 
 #[cfg(any(feature = "test", test))]

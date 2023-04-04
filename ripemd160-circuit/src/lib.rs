@@ -97,6 +97,61 @@ pub trait RIPEMD160Instructions<F: FieldExt>: Chip<F> {
     ) -> Result<[Self::BlockWord; DIGEST_SIZE], Error>;
 }
 
+/// The output of a RIPEMD-160 circuit
+#[derive(Debug)]
+pub struct RIPEMD160Digest<BlockWord>([BlockWord; DIGEST_SIZE]);
+
+/// A gadget that constrains a RIPEMD-160.
+#[derive(Debug)]
+pub struct RIPEMD160<F: FieldExt, CS: RIPEMD160Instructions<F>> {
+    chip: CS,
+    state: CS::State,
+}
+
+impl<F: FieldExt, Ripemd160Chip: RIPEMD160Instructions<F>> RIPEMD160<F, Ripemd160Chip> {
+    /// Create a new hasher instance
+    pub fn new(chip: Ripemd160Chip, mut layouter: impl Layouter<F>) -> Result<Self, Error> {
+        let state = chip.init_vector(&mut layouter)?;
+        Ok(RIPEMD160 { chip, state })
+    }
+
+    /// Update the internal state by consuming all message blocks
+    /// The input is assumed to be already padded to a multiple of 16 Blockwords
+    pub fn update(
+        &mut self,
+        mut layouter: impl Layouter<F>,
+        data: &Vec<[Ripemd160Chip::BlockWord; BLOCK_SIZE]>,
+    ) -> Result<(), Error> {
+        // Process all blocks
+        for block in data {
+            self.state = self.chip.compress(&mut layouter, &self.state, *block)?;
+        }
+
+        Ok(())
+    }
+
+    /// Retrieve result and consume hasher instance.
+    pub fn finalize(
+        self,
+        mut layouter: impl Layouter<F>,
+    ) -> Result<RIPEMD160Digest<Ripemd160Chip::BlockWord>, Error> {
+        self.chip
+            .digest(&mut layouter, &self.state)
+            .map(RIPEMD160Digest)
+    }
+
+    /// Util function to compute hash of the data
+    pub fn digest(
+        chip: Ripemd160Chip,
+        mut layouter: impl Layouter<F>,
+        data: &Vec<[Ripemd160Chip::BlockWord; BLOCK_SIZE]>,
+    ) -> Result<RIPEMD160Digest<Ripemd160Chip::BlockWord>, Error> {
+        let mut hasher = Self::new(chip, layouter.namespace(|| "init"))?;
+        hasher.update(layouter.namespace(|| "update"), data)?;
+        hasher.finalize(layouter.namespace(|| "finalize"))
+    }
+}
+
 #[cfg(any(feature = "test", test))]
 pub mod dev {
     use super::*;

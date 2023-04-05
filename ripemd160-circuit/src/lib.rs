@@ -68,8 +68,8 @@ impl<F: FieldExt> Ripemd160Chip<F> {
     }
 }
 
-const BLOCK_SIZE: usize = 16;
-const DIGEST_SIZE: usize = 5;
+pub mod constants;
+use constants::{BLOCK_SIZE, DIGEST_SIZE};
 
 /// The set of circuit instructions required to use the [`RIPEMD160`] gadget.
 pub trait RIPEMD160Instructions<F: FieldExt>: Chip<F> {

@@ -68,7 +68,9 @@ impl<F: FieldExt> Ripemd160Chip<F> {
     }
 }
 
-pub mod constants;
+mod constants;
+mod table16;
+
 use constants::{BLOCK_SIZE, DIGEST_SIZE};
 
 /// The set of circuit instructions required to use the [`RIPEMD160`] gadget.

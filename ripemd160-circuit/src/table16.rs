@@ -8,8 +8,10 @@ use halo2_proofs::{
     plonk::{Any, Assigned, Column, Error},
 };
 
+mod spread_table;
 pub(crate) mod util;
 
+use spread_table::*;
 use util::*;
 
 /// A word in `Table16` message block.
@@ -196,4 +198,14 @@ impl AssignedBits<32> {
         }
         .map(AssignedBits)
     }
+}
+
+pub const NUM_ADVICE_COLS: usize = 3;
+
+/// Configuration of [`Table16Chip`]
+#[derive(Clone, Debug)]
+pub struct Table16Config {
+    lookup: SpreadTableConfig,
+    message_schedule: MessageScheduleConfig,
+    compression: CompressionConfig,
 }

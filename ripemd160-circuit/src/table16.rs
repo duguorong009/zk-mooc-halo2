@@ -2,17 +2,23 @@
 Based on code from https://github.com/privacy-scaling-explorations/halo2/blob/8c945507ceca5f4ed6e52da3672ea0308bcac812/halo2_gadgets/src/sha256/table16.rs
 */
 
+use std::marker::PhantomData;
+
 use halo2_proofs::{
-    circuit::{AssignedCell, Region, Value},
+    circuit::{AssignedCell, Chip, Layouter, Region, Value},
     halo2curves::pasta::pallas,
-    plonk::{Any, Assigned, Column, Error},
+    plonk::{Advice, Any, Assigned, Column, ConstraintSystem, Error},
 };
 
+mod message_schedule;
 mod spread_table;
 pub(crate) mod util;
 
+use message_schedule::*;
 use spread_table::*;
 use util::*;
+
+use crate::{constants::INITIAL_VALUES, RIPEMD160Instructions};
 
 /// A word in `Table16` message block.
 #[derive(Clone, Copy, Debug, Default)]
@@ -208,4 +214,167 @@ pub struct Table16Config {
     lookup: SpreadTableConfig,
     message_schedule: MessageScheduleConfig,
     compression: CompressionConfig,
+}
+
+/// A chip that implement the RIPEMD-160 with a maximum lookup table size of $2^16$.
+#[derive(Debug, Clone)]
+pub struct Table16Chip {
+    config: Table16Config,
+    _marker: PhantomData<pallas::Base>,
+}
+
+impl Chip<pallas::Base> for Table16Chip {
+    type Config = Table16Config;
+    type Loaded = ();
+
+    fn config(&self) -> &Self::Config {
+        &self.config
+    }
+
+    fn loaded(&self) -> &Self::Loaded {
+        &()
+    }
+}
+
+impl Table16Chip {
+    /// Reconstructs this chip from the given config.
+    pub fn construct(config: <Self as Chip<pallas::Base>>::Config) -> Self {
+        Self {
+            config,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Configure a circuit to include this chip.
+    pub fn configure(
+        meta: &mut ConstraintSystem<pallas::Base>,
+    ) -> <Self as Chip<pallas::Base>>::Config {
+        // columns required for this chip
+        let advice: [Column<Advice>; NUM_ADVICE_COLS] = [
+            meta.advice_column(),
+            meta.advice_column(),
+            meta.advice_column(),
+        ];
+
+        // Three advice columns to interact with lookup tables
+        let input_tag = meta.advice_column();
+        let input_dense = meta.advice_column();
+        let input_spread = meta.advice_column();
+
+        let lookup = SpreadTableChip::configure(meta, input_tag, input_dense, input_spread);
+        let lookup_inputs = lookup.input.clone();
+
+        // Rename these here for ease of matching the gates to the specification.
+        let _a_0 = lookup_inputs.tag;
+        let a_1 = lookup_inputs.dense;
+        let a_2 = lookup_inputs.spread;
+        let a_3 = advice[0];
+        let a_4 = advice[1];
+        let a_5 = advice[2];
+
+        // Add all advice columns to permutation
+        for col in [a_1, a_2, a_3, a_4, a_5].iter() {
+            meta.enable_equality(*col);
+        }
+
+        let s_decompose_word = meta.selector();
+
+        let compression =
+            CompressionConfig::configure(meta, lookup_inputs.clone(), advice, s_decompose_word);
+
+        let message_schedule =
+            MessageScheduleConfig::configure(meta, lookup_inputs, advice, s_decompose_word);
+
+        Table16Config {
+            lookup,
+            message_schedule,
+            compression,
+        }
+    }
+
+    /// Loads the lookup table required by this chip into the circuit
+    pub fn load(
+        config: Table16Config,
+        layouter: &mut impl Layouter<pallas::Base>,
+    ) -> Result<(), Error> {
+        SpreadTableChip::load(config.lookup, layouter)
+    }
+}
+
+impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
+    type State = State;
+    type BlockWord = BlockWord;
+
+    fn init_vector(
+        &self,
+        layouter: &mut impl Layouter<pallas::Base>,
+    ) -> Result<Self::State, Error> {
+        self.config()
+            .compression
+            .initialize_with_iv(layouter, INITIAL_VALUES)
+    }
+
+    // Given an initialized state and an input message block, compress the
+    // message block and return the final state
+    fn compress(
+        &self,
+        layouter: &mut impl Layouter<pallas::Base>,
+        initialized_state: &Self::State,
+        input: [Self::BlockWord; crate::constants::BLOCK_SIZE],
+    ) -> Result<Self::State, Error> {
+        let config = self.config();
+        let (_, w_halves, _) = config.message_schedule.process(layouter, input)?;
+        config
+            .compression
+            .compress(layouter, initialized_state.clone(), w_halves)
+    }
+
+    fn digest(
+        &self,
+        layouter: &mut impl Layouter<pallas::Base>,
+        state: &Self::State,
+    ) -> Result<[Self::BlockWord; crate::constants::DIGEST_SIZE], Error> {
+        // Copy the dense forms of the state variable chunks down to this gate.
+        // Reconstruct the 32-bit dense words.
+        self.config().compression.digest(layouter, state.clone())
+    }
+}
+
+/// Common assignment patterns used by Table16 regions.
+trait Table16Assignment {
+    fn assign_word_and_halves<A, AR>(
+        &self,
+        annotation: A,
+        region: &mut Region<'_, pallas::Base>,
+        lookup: &SpreadInputs,
+        a_3: Column<Advice>,
+        a_4: Column<Advice>,
+        a_5: Column<Advice>,
+        word: Value<u32>,
+        row: usize,
+    ) -> Result<(AssignedBits<32>, (SpreadVar<16, 32>, SpreadVar<16, 32>)), Error>
+    where
+        A: Fn() -> AR,
+        AR: Into<String>,
+    {
+        let w_lo_val = word.map(|word| word as u16);
+        let w_lo_bvec: Value<[bool; 16]> = w_lo_val.map(|x| i2lebsp(x.into()));
+        let spread_w_lo = w_lo_bvec.map(SpreadWord::<16, 32>::new());
+        let spread_w_lo = SpreadVar::with_lookup(region, &lookup, row, spread_w_lo)?;
+        spread_w_lo
+            .dense
+            .copy_advice(&annotation, region, a_3, row)?;
+
+        let w_hi_val = word.map(|word| (word >> 16) as u16);
+        let w_hi_bvec = w_hi_val.map(|x| i2lebsp(x.into()));
+        let spread_w_hi = w_hi_bvec.map(SpreadWord::<16, 32>::new);
+        let spread_w_hi = SpreadVar::with_lookup(region, &lookup, row + 1, spread_w_hi)?;
+        spread_w_hi
+            .dense
+            .copy_advice(&annotation, region, a_4, row)?;
+
+        let w = AssignedBits::<32>::assign(region, annotation, a_5, row, word)?;
+
+        Ok((w, (spread_w_lo, spread_w_hi)))
+    }
 }

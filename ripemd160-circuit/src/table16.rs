@@ -10,10 +10,12 @@ use halo2_proofs::{
     plonk::{Advice, Any, Assigned, Column, ConstraintSystem, Error},
 };
 
+mod gates;
 mod message_schedule;
 mod spread_table;
 pub(crate) mod util;
 
+use gates::*;
 use message_schedule::*;
 use spread_table::*;
 use util::*;

@@ -8,7 +8,8 @@ use halo2_proofs::{
 use crate::constants::BLOCK_SIZE;
 
 use super::{
-    spread_table::SpreadInputs, AssignedBits, BlockWord, Table16Assignment, NUM_ADVICE_COLS,
+    gates::Gate, spread_table::SpreadInputs, AssignedBits, BlockWord, Table16Assignment,
+    NUM_ADVICE_COLS,
 };
 
 // Rows needed for each decompose gate

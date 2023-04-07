@@ -10,11 +10,13 @@ use halo2_proofs::{
     plonk::{Advice, Any, Assigned, Column, ConstraintSystem, Error},
 };
 
+mod compression;
 mod gates;
 mod message_schedule;
 mod spread_table;
 pub(crate) mod util;
 
+use compression::*;
 use gates::*;
 use message_schedule::*;
 use spread_table::*;
@@ -313,7 +315,7 @@ impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
     ) -> Result<Self::State, Error> {
         self.config()
             .compression
-            .initialize_with_iv(layouter, INITIAL_VALUES)
+            .init_with_iv(layouter, INITIAL_VALUES)
     }
 
     // Given an initialized state and an input message block, compress the
@@ -325,7 +327,7 @@ impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
         input: [Self::BlockWord; crate::constants::BLOCK_SIZE],
     ) -> Result<Self::State, Error> {
         let config = self.config();
-        let (_, w_halves, _) = config.message_schedule.process(layouter, input)?;
+        let (_, w_halves) = config.message_schedule.process(layouter, input)?;
         config
             .compression
             .compress(layouter, initialized_state.clone(), w_halves)
@@ -361,7 +363,7 @@ trait Table16Assignment {
     {
         let w_lo_val = word.map(|word| word as u16);
         let w_lo_bvec: Value<[bool; 16]> = w_lo_val.map(|x| i2lebsp(x.into()));
-        let spread_w_lo = w_lo_bvec.map(SpreadWord::<16, 32>::new());
+        let spread_w_lo = w_lo_bvec.map(SpreadWord::<16, 32>::new);
         let spread_w_lo = SpreadVar::with_lookup(region, &lookup, row, spread_w_lo)?;
         spread_w_lo
             .dense

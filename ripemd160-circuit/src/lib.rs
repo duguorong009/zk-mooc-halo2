@@ -69,6 +69,7 @@ impl<F: FieldExt> Ripemd160Chip<F> {
 }
 
 mod constants;
+mod ref_impl;
 mod table16;
 
 use constants::{BLOCK_SIZE, DIGEST_SIZE};

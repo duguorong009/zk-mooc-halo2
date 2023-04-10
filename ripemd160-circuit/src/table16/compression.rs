@@ -238,6 +238,7 @@ mod tests {
 
     use crate::constants::{BLOCK_SIZE, BLOCK_SIZE_BYTES, DIGEST_SIZE, INITIAL_VALUES};
     use crate::ref_impl::{hash, pad_message_bytes};
+    use crate::table16::compression::compression_util::match_state;
     use crate::table16::util::convert_byte_slice_to_u32_slice;
     use crate::table16::{AssignedBits, BlockWord, Table16Chip, Table16Config};
 

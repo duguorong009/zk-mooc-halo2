@@ -7,6 +7,7 @@ use crate::constants::{
     BLOCK_SIZE, MSG_SEL_IDX_LEFT, MSG_SEL_IDX_RIGHT, ROL_AMOUNT_LEFT, ROL_AMOUNT_RIGHT,
     ROUND_CONSTANTS_LEFT, ROUND_CONSTANTS_RIGHT, ROUND_PHASE_SIZE,
 };
+use crate::table16::compression::compression_util::*;
 use crate::table16::AssignedBits;
 
 impl CompressionConfig {

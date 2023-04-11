@@ -137,7 +137,7 @@ impl<F: FieldExt> CompressionGate<F> {
 
         Constraints::with_selector(
             s_f2f4,
-            std::itr::empty()
+            std::iter::empty()
                 .chain(neg_check)
                 .chain(Some(("p_check", p_check)))
                 .chain(Some(("q_check", q_check)))
@@ -860,5 +860,649 @@ impl<F: FieldExt> CompressionGate<F> {
                 .chain(Some(("range_check_carry", range_check_carry)))
                 .chain(Some(("sum_re", sum_check))),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use halo2_proofs::circuit::{Layouter, Region, SimpleFloorPlanner, Value};
+    use halo2_proofs::dev::MockProver;
+    use halo2_proofs::halo2curves::pasta::Fp;
+    use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
+    use rand::Rng;
+
+    use crate::table16::compression::CompressionConfig;
+    use crate::table16::spread_table::SpreadTableConfig;
+
+    #[derive(Debug, Clone)]
+    struct CompresionGateTesterConfig {
+        lookup: SpreadTableConfig,
+        compression: CompressionConfig,
+    }
+
+    struct CompressionGateTester {
+        pub b: u32,
+        pub c: u32,
+        pub d: u32,
+        pub k: u32,
+        pub f1_bcd: u32,
+        pub f2_bcd: u32,
+        pub f3_bcd: u32,
+        pub f4_bcd: u32,
+        pub f5_bcd: u32,
+        pub rol_5_b: u32,
+        pub rol_6_b: u32,
+        pub rol_7_b: u32,
+        pub rol_8_b: u32,
+        pub rol_9_b: u32,
+        pub rol_10_b: u32,
+        pub rol_11_b: u32,
+        pub rol_12_b: u32,
+        pub rol_13_b: u32,
+        pub rol_14_b: u32,
+        pub rol_15_b: u32,
+        pub sum_bc: u32,
+        pub sum_bcd: u32,
+        pub sum_bcdk: u32,
+    }
+
+    impl Circuit<Fp> for CompressionGateTester {
+        type Config = CompressionGateTesterConfig;
+        type FloorPlanner = SimpleFloorPlanner;
+
+        fn without_witnesses(&self) -> Self {
+            CompressionGateTester {
+                b: 0,
+                c: 0,
+                d: 0,
+                k: 0,
+                f1_bcd: 0,
+                f2_bcd: 0,
+                f3_bcd: 0,
+                f4_bcd: 0,
+                f5_bcd: 0,
+                rol_5_b: 0,
+                rol_6_b: 0,
+                rol_7_b: 0,
+                rol_8_b: 0,
+                rol_9_b: 0,
+                rol_10_b: 0,
+                rol_11_b: 0,
+                rol_12_b: 0,
+                rol_13_b: 0,
+                rol_14_b: 0,
+                rol_15_b: 0,
+                sum_bc: 0,
+                sum_bcd: 0,
+                sum_bcdk: 0,
+            }
+        }
+
+        fn configure(meta: &mut ConstraintSystem<Fp>) -> Self::Config {
+            let input_tag = meta.advice_column();
+            let input_dense = meta.advice_column();
+            let input_spread = meta.advice_column();
+            let advice = [
+                meta.advice_column(),
+                meta.advice_column(),
+                meta.advice_column(),
+            ];
+            let s_decompose_word = meta.selector();
+
+            let lookup = SpreadTableChip::configure(meta, input_tag, input_dense, input_spread);
+            let lookup_inputs = lookup.input.clone();
+
+            let _a_0 = lookup_inputs.tag;
+            let a_1 = lookup_inputs.dense;
+            let a_2 = lookup_inputs.spread;
+            let a_3 = advice[0];
+            let a_4 = advice[1];
+            let a_5 = advice[2];
+
+            // Add all advice columns to permutation
+            for column in [a_1, a_2, a_3, a_4, a_5].iter() {
+                meta.enable_equality(*column);
+            }
+
+            let compression =
+                CompressionConfig::configure(meta, lookup_inputs, advice, s_decompose_word);
+
+            Self::Config {
+                lookup,
+                compression,
+            }
+        }
+
+        fn synthesize(
+            &self,
+            config: Self::Config,
+            layouter: impl Layouter<Fp>,
+        ) -> Result<(), Error> {
+            SpreadTableChip::load(config.lookup.clone(), &mut layouter)?;
+
+            layouter.assign_region(
+                || "compression_gate testing",
+                |mut region: Region<Fp>| {
+                    let a_3 = config.compression.advice[0];
+                    let a_4 = config.compression.advice[1];
+                    let a_5 = config.compression.advice[2];
+
+                    let mut row = 0_usize;
+
+                    let (_, (spread_b_var_lo, spread_b_var_hi)) =
+                        config.compression.assign_word_and_halves(
+                            || "b",
+                            &mut region,
+                            &config.lookup.input,
+                            a_3,
+                            a_4,
+                            a_5,
+                            Value::known(self.b),
+                            row,
+                        )?;
+                    row += 2;
+
+                    // row = 2
+                    let (_, (spread_c_var_lo, spread_c_var_hi)) =
+                        config.compression.assign_word_and_halves(
+                            || "c",
+                            &mut region,
+                            &config.lookup.input,
+                            a_3,
+                            a_4,
+                            a_5,
+                            Value::known(self.c),
+                            row,
+                        )?;
+                    row += 2;
+
+                    // row = 4
+                    let (_, (spread_d_var_lo, spread_d_var_hi)) =
+                        config.compression.assign_word_and_halves(
+                            || "d",
+                            &mut region,
+                            &config.lookup.input,
+                            a_3,
+                            a_4,
+                            a_5,
+                            Value::known(self.d),
+                            row,
+                        )?;
+                    row += 2;
+
+                    let spread_halves_b = (
+                        spread_b_var_lo.clone().spread,
+                        spread_b_var_hi.clone().spread,
+                    );
+                    let spread_halves_c = (
+                        spread_c_var_lo.clone().spread,
+                        spread_c_var_hi.clone().spread,
+                    );
+                    let spread_halves_d = (
+                        spread_d_var_lo.clone().spread,
+                        spread_d_var_hi.clone().spread,
+                    );
+
+                    // row = 6
+                    // Testing f1_gate
+                    let (xor_out_lo, xor_out_hi) = config.compression.assign_f1(
+                        &mut region,
+                        row,
+                        spread_halves_b.clone().into(),
+                        spread_halves_c.clone().into(),
+                        spread_halves_d.clone().into(),
+                    )?;
+                    row += 4; // f1 requires four rows
+
+                    // row = 10
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        xor_out_lo,
+                        xor_out_hi,
+                        Value::known(self.f1_bcd),
+                    )?;
+                    row += 1;
+
+                    // row = 11
+                    // Testing f2_gate
+                    let (f2_bcd_lo, f2_bcd_hi) = config.compression.assign_f2(
+                        &mut region,
+                        row,
+                        spread_halves_b.clone().into(),
+                        spread_halves_c.clone().into(),
+                        spread_halves_d.clone().into(),
+                    )?;
+                    row += 8; // f2 requires eight rows
+
+                    // row = 19
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        f2_bcd_lo,
+                        f2_bcd_hi,
+                        Value::known(self.f2_bcd),
+                    )?;
+                    row += 1;
+
+                    // row = 20
+                    // Testing f4_gate
+                    let (f4_bcd_lo, f4_bcd_hi) = config.compression.assign_f4(
+                        &mut region,
+                        row,
+                        spread_halves_b.clone().into(),
+                        spread_halves_c.clone().into(),
+                        spread_halves_d.clone().into(),
+                    )?;
+                    row += 8; // f4 requires eight rows
+
+                    // row = 28
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        f4_bcd_lo,
+                        f4_bcd_hi,
+                        Value::known(self.f4_bcd),
+                    )?;
+                    row += 1;
+
+                    // row = 29
+                    // Testing f3_gate
+                    let (f3_bcd_lo, f3_bcd_hi) = config.compression.assign_f3(
+                        &mut region,
+                        row,
+                        spread_halves_b.clone().into(),
+                        spread_halves_c.clone().into(),
+                        spread_halves_d.clone().into(),
+                    )?;
+                    row += 10; // f3 requires ten rows
+
+                    // row = 39
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        f3_bcd_lo,
+                        f3_bcd_hi,
+                        Value::known(self.f3_bcd),
+                    )?;
+                    row += 1;
+
+                    // row = 40
+                    // Testing f5_gate
+                    let (f5_bcd_lo, f5_bcd_hi) = config.compression.assign_f5(
+                        &mut region,
+                        row,
+                        spread_halves_b.clone().into(),
+                        spread_halves_c.clone().into(),
+                        spread_halves_d.clone().into(),
+                    )?;
+                    row += 10; // f5 requires ten rows
+
+                    // row = 50
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        f5_bcd_lo,
+                        f5_bcd_hi,
+                        Value::known(self.f5_bcd),
+                    )?;
+                    row += 1;
+
+                    // row = 51
+                    // Testing rotate_left_5 gate
+                    let b_round_word_dense = RoundWordDense(
+                        spread_b_var_lo.clone().dense,
+                        spread_b_var_hi.clone().dense,
+                    );
+                    let rol_5_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        5,
+                    )?;
+                    row += 2; // rotate_left_5 requires two rows
+
+                    // row = 53
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_5_b.0,
+                        rol_5_b.1,
+                        Value::known(self.rol_5_b),
+                    )?;
+                    row += 1;
+
+                    // row = 54
+                    // Testing rotate_left_6 gate
+                    let rol_6_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        6,
+                    )?;
+                    row += 2; // rotate_left_6 requires two rows
+
+                    // row = 56
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_6_b.0,
+                        rol_6_b.1,
+                        Value::known(self.rol_6_b),
+                    )?;
+                    row += 1;
+
+                    // row = 57
+                    // Testing rotate_left_7 gate
+                    let rol_7_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        7,
+                    )?;
+                    row += 2; // rotate_left_7 requires two rows
+
+                    // row = 59
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_7_b.0,
+                        rol_7_b.1,
+                        Value::known(self.rol_7_b),
+                    )?;
+                    row += 1;
+
+                    // row = 60
+                    // Testing rotate_left_8 gate
+                    let rol_8_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        8,
+                    )?;
+                    row += 2; // rotate_left_8 requires two rows
+
+                    // row = 62
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_8_b.0,
+                        rol_8_b.1,
+                        Value::known(self.rol_8_b),
+                    )?;
+                    row += 1;
+
+                    // row = 63
+                    // Testing rotate_left_9 gate
+                    let rol_9_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        9,
+                    )?;
+                    row += 2; // rotate_left_9 requires two rows
+
+                    // row = 65
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_9_b.0,
+                        rol_9_b.1,
+                        Value::known(self.rol_9_b),
+                    )?;
+                    row += 1;
+
+                    // row = 66
+                    // Testing rotate_left_10 gate
+                    let rol_10_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        10,
+                    )?;
+                    row += 2; // rotate_left_10 requires two rows
+
+                    // row = 68
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_10_b.0,
+                        rol_10_b.1,
+                        Value::known(self.rol_10_b),
+                    )?;
+                    row += 1;
+
+                    // row = 69
+                    // Testing rotate_left_11 gate
+                    let rol_11_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        11,
+                    )?;
+                    row += 2; // rotate_left_11 requires two rows
+
+                    // row = 71
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_11_b.0,
+                        rol_11_b.1,
+                        Value::known(self.rol_11_b),
+                    )?;
+                    row += 1;
+
+                    // row = 72
+                    // Testing rotate_left_12 gate
+                    let rol_12_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        12,
+                    )?;
+                    row += 2; // rotate_left_12 requires two rows
+
+                    // row = 74
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_12_b.0,
+                        rol_12_b.1,
+                        Value::known(self.rol_12_b),
+                    )?;
+                    row += 1;
+
+                    // row = 75
+                    // Testing rotate_left_13 gate
+                    let rol_13_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        13,
+                    )?;
+                    row += 2; // rotate_left_13 requires two rows
+
+                    // row = 77
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_13_b.0,
+                        rol_13_b.1,
+                        Value::known(self.rol_13_b),
+                    )?;
+                    row += 1;
+
+                    // row = 78
+                    // Testing rotate_left_14 gate
+                    let rol_14_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        14,
+                    )?;
+                    row += 2; // rotate_left_14 requires two rows
+
+                    // row = 80
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_14_b.0,
+                        rol_14_b.1,
+                        Value::known(self.rol_14_b),
+                    )?;
+                    row += 1;
+
+                    // row = 81
+                    // Testing rotate_left_15 gate
+                    let rol_15_b = config.compression.assign_rotate_left(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        15,
+                    )?;
+                    row += 2; // rotate_left_15 requires two rows
+
+                    // row = 83
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        rol_15_b.0,
+                        rol_15_b.1,
+                        Value::known(self.rol_15_b),
+                    )?;
+                    row += 1;
+
+                    // row = 84
+                    // Testing sum_afxk_gate
+                    let c_round_word_dense = RoundWordDense(
+                        spread_c_var_lo.clone().dense,
+                        spread_c_var_hi.clone().dense,
+                    );
+                    let d_round_word_dense = RoundWordDense(
+                        spread_d_var_lo.clone().dense,
+                        spread_d_var_hi.clone().dense,
+                    );
+                    let sum_dense = config.compression.assign_sum_afxk(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        c_round_word_dense.clone(),
+                        d_round_word_dense.clone(),
+                        self.k,
+                    )?;
+                    row += 3; // sum_afxk_gate requires three rows
+
+                    // row = 87
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        sum_dense.0,
+                        sum_dense.1,
+                        Value::known(self.sum_bcdk),
+                    )?;
+                    row += 1;
+
+                    // row = 88
+                    // Testing sum_re_gate
+                    let sum = config.compression.assign_sum_re(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        c_round_word_dense.clone(),
+                    )?;
+                    row += 2; // sum_re_gate requires two rows
+
+                    // row = 90
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        sum.dense_halves.0,
+                        sum.dense_halves.1,
+                        Value::known(self.sum_bc),
+                    )?;
+                    row += 1;
+
+                    // row = 91
+                    // Testing sum_re_gate
+                    let sum = config.compression.assign_sum_combine_ilr(
+                        &mut region,
+                        row,
+                        b_round_word_dense.clone(),
+                        c_round_word_dense.clone(),
+                        d_round_word_dense.clone(),
+                    )?;
+                    row += 3; // sum_combine_ilr_gate requires three rows
+
+                    // row = 94
+                    config.compression.assign_decompose_word(
+                        &mut region,
+                        row,
+                        sum.dense_halves.0,
+                        sum.dense_halves.1,
+                        Value::known(self.sum_bcd),
+                    )?;
+
+                    Ok(())
+                },
+            )?;
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn test_gates() {
+        let mut rng = rand::thread_rng();
+        let b: u32 = rng.gen();
+        let c: u32 = rng.gen();
+        let d: u32 = rng.gen();
+        let k: u32 = rng.gen();
+        let f1_bcd: u32 = f1(b, c, d);
+        let f2_bcd: u32 = f2(b, c, d);
+        let f3_bcd: u32 = f3(b, c, d);
+        let f4_bcd: u32 = f4(b, c, d);
+        let f5_bcd: u32 = f5(b, c, d);
+        let rol_5_b: u32 = rol(b, 5);
+        let rol_6_b: u32 = rol(b, 6);
+        let rol_7_b: u32 = rol(b, 7);
+        let rol_8_b: u32 = rol(b, 8);
+        let rol_9_b: u32 = rol(b, 9);
+        let rol_10_b: u32 = rol(b, 10);
+        let rol_11_b: u32 = rol(b, 11);
+        let rol_12_b: u32 = rol(b, 12);
+        let rol_13_b: u32 = rol(b, 13);
+        let rol_14_b: u32 = rol(b, 14);
+        let rol_15_b: u32 = rol(b, 15);
+        let sum_bc = b.overflowing_add(c).0;
+        let sum_bcd = sum_bc.overflowing_add(d).0;
+        let sum_bcdk = sum_bcd.overflowing_add(k).0;
+
+        let circuit = CompressionGateTester {
+            b,
+            c,
+            d,
+            k,
+            f1_bcd,
+            f2_bcd,
+            f3_bcd,
+            f4_bcd,
+            f5_bcd,
+            rol_5_b,
+            rol_6_b,
+            rol_7_b,
+            rol_8_b,
+            rol_9_b,
+            rol_10_b,
+            rol_11_b,
+            rol_12_b,
+            rol_13_b,
+            rol_14_b,
+            rol_15_b,
+            sum_bc,
+            sum_bcd,
+            sum_bcdk,
+        };
+
+        let prover = MockProver::run(17, &circuit, vec![]).unwrap();
+        prover.assert_satisfied();
     }
 }

@@ -117,8 +117,8 @@ impl<F: FieldExt> CompressionGate<F> {
                 .chain(Some(("hi_check", hi_check)))
         };
 
-        let q_lhs_lo = spread_b_neg_lo + spread_b_lo;
-        let q_lhs_hi = spread_b_neg_hi + spread_b_hi;
+        let q_lhs_lo = spread_b_neg_lo + spread_d_lo;
+        let q_lhs_hi = spread_b_neg_hi + spread_d_hi;
         let q_lhs = q_lhs_lo + q_lhs_hi * F::from(1 << 32);
 
         let q_rhs_even = spread_q0_even + spread_q1_even * F::from(1 << 32);

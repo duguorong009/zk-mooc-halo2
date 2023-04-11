@@ -143,11 +143,11 @@ impl CompressionConfig {
             .zip(spread_halves_y.value())
             .map(|(e, f)| i2lebsp(e + f));
 
-        let p_0: Value<[bool; 64]> = p.map(|p| p[..32].try_into().unwrap());
+        let p_0: Value<[bool; 32]> = p.map(|p| p[..32].try_into().unwrap());
         let p_0_even = p_0.map(even_bits);
         let p_0_odd = p_0.map(odd_bits);
 
-        let p_1: Value<[bool; 64]> = p.map(|p| p[32..].try_into().unwrap());
+        let p_1: Value<[bool; 32]> = p.map(|p| p[32..].try_into().unwrap());
         let p_1_even = p_1.map(even_bits);
         let p_1_odd = p_1.map(odd_bits);
 

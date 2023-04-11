@@ -301,7 +301,7 @@ impl SpreadTableConfig {
 mod tests {
     use halo2_proofs::{
         circuit::{SimpleFloorPlanner, Value},
-        halo2curves::{pasta::Fp, FieldExt},
+        halo2curves::FieldExt,
         plonk::{Advice, Circuit, Column, Error},
     };
 
@@ -341,7 +341,7 @@ mod tests {
                 layouter.assign_region(
                     || "spread_test",
                     |mut gate| {
-                        let mut row = 0;
+                        let row = 0;
                         let mut add_row = |tag, dense, spread| -> Result<(), Error> {
                             gate.assign_advice(
                                 || "tag",

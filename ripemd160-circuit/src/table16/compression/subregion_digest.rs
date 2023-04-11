@@ -1,5 +1,6 @@
 use halo2_proofs::{circuit::Region, halo2curves::pasta::pallas, plonk::Error};
 
+use crate::table16::compression::compression_util::*;
 use crate::{constants::DIGEST_SIZE, table16::BlockWord};
 
 use super::{CompressionConfig, State};

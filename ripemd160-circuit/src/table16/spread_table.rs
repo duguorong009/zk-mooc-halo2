@@ -81,6 +81,7 @@ impl<const DENSE: usize, const SPREAD: usize> SpreadWord<DENSE, SPREAD> {
 }
 
 /// Variable stored in advice columns corresponding to a row of [`SpreadTableConfig`].
+#[derive(Debug, Clone)]
 pub(super) struct SpreadVar<const DENSE: usize, const SPREAD: usize> {
     pub tag: Value<u8>,
     pub dense: AssignedBits<DENSE>,

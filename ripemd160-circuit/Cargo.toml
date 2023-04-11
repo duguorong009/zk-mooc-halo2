@@ -11,3 +11,6 @@ lazy_static = "1.4.0"
 [features]
 default = ["test"]
 test = []
+
+[dev-dependencies]
+rand = "0.8.5"

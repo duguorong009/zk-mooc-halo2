@@ -1,5 +1,3 @@
-use crate::constants::BLOCK_SIZE_BYTES;
-
 /*
 Code from https://github.com/privacy-scaling-explorations/halo2/blob/8c945507ceca5f4ed6e52da3672ea0308bcac812/halo2_gadgets/src/sha256/table16/util.rs
 with some new helper functions.

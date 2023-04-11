@@ -6,7 +6,7 @@ use crate::constants::{
 use std::convert::TryInto;
 
 #[derive(Default, Debug, PartialEq, Clone, Copy)]
-struct State {
+pub struct State {
     a: u32,
     b: u32,
     c: u32,

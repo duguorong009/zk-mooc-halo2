@@ -5,6 +5,7 @@ use halo2_proofs::{
 };
 use std::convert::TryInto;
 
+use crate::ref_impl::rol;
 use crate::table16::spread_table::{SpreadInputs, SpreadVar, SpreadWord};
 use crate::table16::util::{even_bits, i2lebsp, lebs2ip, negate_spread, odd_bits, sum_with_carry};
 use crate::table16::AssignedBits;
@@ -57,7 +58,7 @@ impl CompressionConfig {
             .copy_advice(|| "spread_d_hi", region, a_5, row + 1)?;
 
         let m: Value<[bool; 64]> = spread_halves_b
-            .values()
+            .value()
             .zip(spread_halves_c.value())
             .zip(spread_halves_d.value())
             .map(|((a, b), c)| i2lebsp(a + b + c));
@@ -464,7 +465,7 @@ impl CompressionConfig {
         &self,
         region: &mut Region<'_, pallas::Base>,
         row: usize,
-        word: RoundWordSpread,
+        word: RoundWordDense,
         shift: u8,
     ) -> Result<RoundWordDense, Error> {
         assert!(shift > 4 && shift < 16);
@@ -504,7 +505,7 @@ impl CompressionConfig {
             let a_hi: Value<[bool; 3]> = word_hi.map(|q| q[13..].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, b, c)?;
 
-            AssignedBits::<3>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
+            AssignedBits::<2>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
             AssignedBits::<3>::assign_bits(region, || "a_hi(3)", a_3, row + 1, a_hi)?;
         } else if shift == 6 {
             let b: Value<[bool; 10]> = word_hi.map(|q| q[..10].try_into().unwrap());
@@ -646,7 +647,7 @@ impl CompressionConfig {
             || "sum_afxk_carry",
             a_5,
             row + 2,
-            || carry.map(|value| pallas::Base::from(w.into())),
+            || carry.map(|value| pallas::Base::from(value as u64)),
         )?;
 
         let sum: Value<[bool; 32]> = sum.map(|w| i2lebsp(w.into()));

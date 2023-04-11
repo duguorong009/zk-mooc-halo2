@@ -107,9 +107,10 @@ impl<F: FieldExt> CompressionGate<F> {
         let neg_check = {
             let evens = Self::ones() * F::from(MASK_EVEN_32 as u64);
             // evens - spread_x_lo = spread_neg_x_lo
-            let lo_check = spread_b_neg_lo.clone() + spread_b_lo + (evens.clone()) * (-F::one());
+            let lo_check =
+                spread_b_neg_lo.clone() + spread_b_lo.clone() + (evens.clone()) * (-F::one());
             // evens - spread_x_hi = spread_neg_x_hi
-            let hi_check = spread_b_neg_hi.clone() + spread_b_hi + (evens * (-F::one()));
+            let hi_check = spread_b_neg_hi.clone() + spread_b_hi.clone() + (evens * (-F::one()));
 
             std::iter::empty()
                 .chain(Some(("lo_check", lo_check)))
@@ -871,11 +872,13 @@ mod tests {
     use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
     use rand::Rng;
 
-    use crate::table16::compression::CompressionConfig;
-    use crate::table16::spread_table::SpreadTableConfig;
+    use crate::ref_impl::*;
+    use crate::table16::compression::{CompressionConfig, RoundWordDense};
+    use crate::table16::spread_table::{SpreadTableChip, SpreadTableConfig};
+    use crate::table16::Table16Assignment;
 
     #[derive(Debug, Clone)]
-    struct CompresionGateTesterConfig {
+    struct CompressionGateTesterConfig {
         lookup: SpreadTableConfig,
         compression: CompressionConfig,
     }
@@ -976,7 +979,7 @@ mod tests {
         fn synthesize(
             &self,
             config: Self::Config,
-            layouter: impl Layouter<Fp>,
+            mut layouter: impl Layouter<Fp>,
         ) -> Result<(), Error> {
             SpreadTableChip::load(config.lookup.clone(), &mut layouter)?;
 

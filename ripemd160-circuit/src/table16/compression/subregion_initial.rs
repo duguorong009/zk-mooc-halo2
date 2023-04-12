@@ -1,4 +1,4 @@
-use halo2_proofs::halo2curves::pasta::pallas;
+use halo2_proofs::halo2curves::FieldExt;
 use halo2_proofs::{
     circuit::{Region, Value},
     plonk::Error,
@@ -9,12 +9,12 @@ use crate::table16::Table16Assignment;
 
 use super::{CompressionConfig, RoundWord, RoundWordDense, RoundWordSpread, State, StateWord};
 
-impl CompressionConfig {
+impl<F: FieldExt> CompressionConfig<F> {
     pub fn init_iv(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         iv: [u32; DIGEST_SIZE],
-    ) -> Result<State, Error> {
+    ) -> Result<State<F>, Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];

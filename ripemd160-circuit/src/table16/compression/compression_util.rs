@@ -1,4 +1,4 @@
-use halo2_proofs::halo2curves::pasta::pallas;
+use halo2_proofs::halo2curves::FieldExt;
 use halo2_proofs::{
     circuit::{Region, Value},
     plonk::Error,
@@ -12,7 +12,7 @@ use crate::table16::AssignedBits;
 
 use super::{CompressionConfig, RoundWord, RoundWordDense, RoundWordSpread, State, StateWord};
 
-impl CompressionConfig {
+impl<F: FieldExt> CompressionConfig<F> {
     // s_f1 | a_0 |   a_1    |       a_2       |    a_3      |    a_4      |    a_5      |
     //   1  |     | R_0_even | spread_R_0_even | spread_B_lo | spread_C_lo | spread_D_lo |
     //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi | spread_C_hi | spread_D_hi |
@@ -21,12 +21,12 @@ impl CompressionConfig {
     //
     pub(super) fn assign_f1(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        spread_halves_b: RoundWordSpread,
-        spread_halves_c: RoundWordSpread,
-        spread_halves_d: RoundWordSpread,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+        spread_halves_b: RoundWordSpread<F>,
+        spread_halves_c: RoundWordSpread<F>,
+        spread_halves_d: RoundWordSpread<F>,
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];
@@ -76,13 +76,13 @@ impl CompressionConfig {
 
     fn assign_f1_outputs(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
         r_0_even: Value<[bool; 16]>,
         r_0_odd: Value<[bool; 16]>,
         r_1_even: Value<[bool; 16]>,
         r_1_odd: Value<[bool; 16]>,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         let (even, _odd) = self.assign_spread_outputs(
             region,
             &self.lookup,
@@ -109,12 +109,12 @@ impl CompressionConfig {
     // Output is sum_lo, sum_hi
     pub(super) fn assign_f2(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        spread_halves_x: RoundWordSpread,
-        spread_halves_y: RoundWordSpread,
-        spread_halves_z: RoundWordSpread,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+        spread_halves_x: RoundWordSpread<F>,
+        spread_halves_y: RoundWordSpread<F>,
+        spread_halves_z: RoundWordSpread<F>,
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];
@@ -169,7 +169,7 @@ impl CompressionConfig {
             .value()
             .map(|spread_x_lo| negate_spread(spread_x_lo.0));
         // Assign spread_neg_x_lo
-        AssignedBits::<32>::assign_bits(
+        AssignedBits::<32, F>::assign_bits(
             region,
             || "spread_neg_x_lo",
             a_5,
@@ -183,7 +183,7 @@ impl CompressionConfig {
             .value()
             .map(|spread_x_hi| negate_spread(spread_x_hi.0));
         // Assign spread_neg_x_hi
-        AssignedBits::<32>::assign_bits(
+        AssignedBits::<32, F>::assign_bits(
             region,
             || "spread_neg_x_hi",
             a_5,
@@ -219,14 +219,14 @@ impl CompressionConfig {
         let sum_lo: Value<[bool; 16]> = sum.map(|w| w[..16].try_into().unwrap());
         let sum_hi: Value<[bool; 16]> = sum.map(|w| w[16..].try_into().unwrap());
 
-        let sum_lo = AssignedBits::<16>::assign_bits(region, || "sum_lo", a_3, row + 6, sum_lo)?;
-        let sum_hi = AssignedBits::<16>::assign_bits(region, || "sum_hi", a_3, row + 7, sum_hi)?;
+        let sum_lo = AssignedBits::<16, F>::assign_bits(region, || "sum_lo", a_3, row + 6, sum_lo)?;
+        let sum_hi = AssignedBits::<16, F>::assign_bits(region, || "sum_hi", a_3, row + 7, sum_hi)?;
 
         region.assign_advice(
             || "f2f4_carry",
             a_4,
             row + 6,
-            || carry.map(|value| pallas::Base::from(value as u64)),
+            || carry.map(|value| F::from(value as u64)),
         )?;
 
         Ok((sum_lo, sum_hi))
@@ -245,12 +245,12 @@ impl CompressionConfig {
     // Output is sum_lo, sum_hi
     pub(super) fn assign_f4(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        spread_halves_x: RoundWordSpread,
-        spread_halves_y: RoundWordSpread,
-        spread_halves_z: RoundWordSpread,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+        spread_halves_x: RoundWordSpread<F>,
+        spread_halves_y: RoundWordSpread<F>,
+        spread_halves_z: RoundWordSpread<F>,
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         self.assign_f2(
             region,
             row,
@@ -262,13 +262,13 @@ impl CompressionConfig {
 
     fn assign_ch_outputs(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
         p_0_even: Value<[bool; 16]>,
         p_0_odd: Value<[bool; 16]>,
         p_1_even: Value<[bool; 16]>,
         p_1_odd: Value<[bool; 16]>,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         let (_even, odd) = self.assign_spread_outputs(
             region,
             &self.lookup,
@@ -297,12 +297,12 @@ impl CompressionConfig {
     // Output is in R_0_even, R_1_even
     pub(super) fn assign_f3(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        spread_halves_x: RoundWordSpread,
-        spread_halves_y: RoundWordSpread,
-        spread_halves_z: RoundWordSpread,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+        spread_halves_x: RoundWordSpread<F>,
+        spread_halves_y: RoundWordSpread<F>,
+        spread_halves_z: RoundWordSpread<F>,
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];
@@ -339,7 +339,7 @@ impl CompressionConfig {
             .value()
             .map(|spread_y_lo| negate_spread(spread_y_lo.0));
         // Assign spread_neg_y_lo
-        let assigned_neg_y_lo = AssignedBits::<32>::assign_bits(
+        let assigned_neg_y_lo = AssignedBits::<32, F>::assign_bits(
             region,
             || "spread_neg_y_lo",
             a_3,
@@ -353,7 +353,7 @@ impl CompressionConfig {
             .value()
             .map(|spread_y_hi| negate_spread(spread_y_hi.0));
         // Assign spread_neg_y_hi
-        let assigned_neg_y_hi = AssignedBits::<32>::assign_bits(
+        let assigned_neg_y_hi = AssignedBits::<32, F>::assign_bits(
             region,
             || "spread_neg_y_hi",
             a_3,
@@ -432,12 +432,12 @@ impl CompressionConfig {
     // f5(X, Y, Z) = X ^ (Y | !Z) = f3(Y, Z, X)
     pub(super) fn assign_f5(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        spread_halves_x: RoundWordSpread,
-        spread_halves_y: RoundWordSpread,
-        spread_halves_z: RoundWordSpread,
-    ) -> Result<(AssignedBits<16>, AssignedBits<16>), Error> {
+        spread_halves_x: RoundWordSpread<F>,
+        spread_halves_y: RoundWordSpread<F>,
+        spread_halves_z: RoundWordSpread<F>,
+    ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
         self.assign_f3(
             region,
             row,
@@ -463,11 +463,11 @@ impl CompressionConfig {
     //               |     | c(16)    |     |      | word_hi | rol_word_hi |
     pub(super) fn assign_rotate_left(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        word: RoundWordDense,
+        word: RoundWordDense<F>,
         shift: u8,
-    ) -> Result<RoundWordDense, Error> {
+    ) -> Result<RoundWordDense<F>, Error> {
         assert!(shift > 4 && shift < 16);
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
@@ -488,9 +488,14 @@ impl CompressionConfig {
         let rol_word_hi: Value<[bool; 16]> = rol_word.map(|q| q[16..].try_into().unwrap());
 
         let rol_word_lo =
-            AssignedBits::<16>::assign_bits(region, || "rol_word_lo", a_5, row, rol_word_lo)?;
-        let rol_word_hi =
-            AssignedBits::<16>::assign_bits(region, || "rol_word_hi", a_5, row + 1, rol_word_hi)?;
+            AssignedBits::<16, F>::assign_bits(region, || "rol_word_lo", a_5, row, rol_word_lo)?;
+        let rol_word_hi = AssignedBits::<16, F>::assign_bits(
+            region,
+            || "rol_word_hi",
+            a_5,
+            row + 1,
+            rol_word_hi,
+        )?;
 
         let word_hi = word.1.value_u16().map(|a| i2lebsp::<16>(a.into()));
         let c: Value<[bool; 16]> = word
@@ -505,8 +510,8 @@ impl CompressionConfig {
             let a_hi: Value<[bool; 3]> = word_hi.map(|q| q[13..].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, b, c)?;
 
-            AssignedBits::<2>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
-            AssignedBits::<3>::assign_bits(region, || "a_hi(3)", a_3, row + 1, a_hi)?;
+            AssignedBits::<2, F>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
+            AssignedBits::<3, F>::assign_bits(region, || "a_hi(3)", a_3, row + 1, a_hi)?;
         } else if shift == 6 {
             let b: Value<[bool; 10]> = word_hi.map(|q| q[..10].try_into().unwrap());
             let b: Value<[bool; 16]> = b.map(|x| lebs2ip::<10>(&x)).map(|y| i2lebsp::<16>(y));
@@ -514,8 +519,8 @@ impl CompressionConfig {
             let a_hi: Value<[bool; 3]> = word_hi.map(|q| q[13..].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, b, c)?;
 
-            AssignedBits::<3>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
-            AssignedBits::<3>::assign_bits(region, || "a_hi(3)", a_3, row + 1, a_hi)?;
+            AssignedBits::<3, F>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
+            AssignedBits::<3, F>::assign_bits(region, || "a_hi(3)", a_3, row + 1, a_hi)?;
         } else if shift == 7 {
             let b: Value<[bool; 9]> = word_hi.map(|q| q[..9].try_into().unwrap());
             let b: Value<[bool; 16]> = b.map(|x| lebs2ip::<9>(&x)).map(|y| i2lebsp::<16>(y));
@@ -523,8 +528,8 @@ impl CompressionConfig {
             let a_hi: Value<[bool; 4]> = word_hi.map(|q| q[12..].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, b, c)?;
 
-            AssignedBits::<3>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
-            AssignedBits::<4>::assign_bits(region, || "a_hi(4)", a_3, row + 1, a_hi)?;
+            AssignedBits::<3, F>::assign_bits(region, || "a_lo(3)", a_3, row, a_lo)?;
+            AssignedBits::<4, F>::assign_bits(region, || "a_hi(4)", a_3, row + 1, a_hi)?;
         } else if shift == 8 {
             let b: Value<[bool; 8]> = word_hi.map(|q| q[..8].try_into().unwrap());
             let b: Value<[bool; 16]> = b.map(|x| lebs2ip::<8>(&x)).map(|y| i2lebsp::<16>(y));
@@ -532,8 +537,8 @@ impl CompressionConfig {
             let a_hi: Value<[bool; 4]> = word_hi.map(|q| q[12..].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, b, c)?;
 
-            AssignedBits::<4>::assign_bits(region, || "a_lo(4)", a_3, row, a_lo)?;
-            AssignedBits::<4>::assign_bits(region, || "a_hi(4)", a_3, row + 1, a_hi)?;
+            AssignedBits::<4, F>::assign_bits(region, || "a_lo(4)", a_3, row, a_lo)?;
+            AssignedBits::<4, F>::assign_bits(region, || "a_hi(4)", a_3, row + 1, a_hi)?;
         } else if shift == 9 {
             let a: Value<[bool; 9]> = word_hi.map(|q| q[7..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<9>(&x)).map(|y| i2lebsp::<16>(y));
@@ -541,8 +546,8 @@ impl CompressionConfig {
             let b_hi: Value<[bool; 4]> = word_hi.map(|q| q[3..7].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<3>::assign_bits(region, || "b_lo(3)", a_3, row, b_lo)?;
-            AssignedBits::<4>::assign_bits(region, || "b_hi(4)", a_3, row + 1, b_hi)?;
+            AssignedBits::<3, F>::assign_bits(region, || "b_lo(3)", a_3, row, b_lo)?;
+            AssignedBits::<4, F>::assign_bits(region, || "b_hi(4)", a_3, row + 1, b_hi)?;
         } else if shift == 10 {
             let a: Value<[bool; 10]> = word_hi.map(|q| q[6..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<10>(&x)).map(|y| i2lebsp::<16>(y));
@@ -550,8 +555,8 @@ impl CompressionConfig {
             let b_hi: Value<[bool; 3]> = word_hi.map(|q| q[3..6].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<3>::assign_bits(region, || "b_lo(3)", a_3, row, b_lo)?;
-            AssignedBits::<3>::assign_bits(region, || "b_hi(3)", a_3, row + 1, b_hi)?;
+            AssignedBits::<3, F>::assign_bits(region, || "b_lo(3)", a_3, row, b_lo)?;
+            AssignedBits::<3, F>::assign_bits(region, || "b_hi(3)", a_3, row + 1, b_hi)?;
         } else if shift == 11 {
             let a: Value<[bool; 11]> = word_hi.map(|q| q[5..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<11>(&x)).map(|y| i2lebsp::<16>(y));
@@ -559,8 +564,8 @@ impl CompressionConfig {
             let b_hi: Value<[bool; 3]> = word_hi.map(|q| q[2..5].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<2>::assign_bits(region, || "b_lo(2)", a_3, row, b_lo)?;
-            AssignedBits::<3>::assign_bits(region, || "b_hi(3)", a_3, row + 1, b_hi)?;
+            AssignedBits::<2, F>::assign_bits(region, || "b_lo(2)", a_3, row, b_lo)?;
+            AssignedBits::<3, F>::assign_bits(region, || "b_hi(3)", a_3, row + 1, b_hi)?;
         } else if shift == 12 {
             let a: Value<[bool; 12]> = word_hi.map(|q| q[4..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<12>(&x)).map(|y| i2lebsp::<16>(y));
@@ -568,29 +573,29 @@ impl CompressionConfig {
             let b_hi: Value<[bool; 2]> = word_hi.map(|q| q[2..4].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<2>::assign_bits(region, || "b_lo(2)", a_3, row, b_lo)?;
-            AssignedBits::<2>::assign_bits(region, || "b_hi(2)", a_3, row + 1, b_hi)?;
+            AssignedBits::<2, F>::assign_bits(region, || "b_lo(2)", a_3, row, b_lo)?;
+            AssignedBits::<2, F>::assign_bits(region, || "b_hi(2)", a_3, row + 1, b_hi)?;
         } else if shift == 13 {
             let a: Value<[bool; 13]> = word_hi.map(|q| q[3..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<13>(&x)).map(|y| i2lebsp::<16>(y));
             let b: Value<[bool; 3]> = word_hi.map(|q| q[0..3].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<3>::assign_bits(region, || "b(3)", a_3, row, b)?;
+            AssignedBits::<3, F>::assign_bits(region, || "b(3)", a_3, row, b)?;
         } else if shift == 14 {
             let a: Value<[bool; 14]> = word_hi.map(|q| q[2..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<14>(&x)).map(|y| i2lebsp::<16>(y));
             let b: Value<[bool; 2]> = word_hi.map(|q| q[0..2].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<2>::assign_bits(region, || "b(2)", a_3, row, b)?;
+            AssignedBits::<2, F>::assign_bits(region, || "b(2)", a_3, row, b)?;
         } else {
             let a: Value<[bool; 15]> = word_hi.map(|q| q[1..].try_into().unwrap());
             let a: Value<[bool; 16]> = a.map(|x| lebs2ip::<15>(&x)).map(|y| i2lebsp::<16>(y));
             let b: Value<[bool; 1]> = word_hi.map(|q| q[0..1].try_into().unwrap());
             self.assign_spread_word(region, &self.lookup, row, a, c)?;
 
-            AssignedBits::<1>::assign_bits(region, || "b(1)", a_3, row, b)?;
+            AssignedBits::<1, F>::assign_bits(region, || "b(1)", a_3, row, b)?;
         };
 
         Ok(RoundWordDense(rol_word_lo, rol_word_hi))
@@ -603,13 +608,13 @@ impl CompressionConfig {
     //
     pub(super) fn assign_sum_afxk(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        a: RoundWordDense,
-        f: RoundWordDense,
-        x: RoundWordDense,
+        a: RoundWordDense<F>,
+        f: RoundWordDense<F>,
+        x: RoundWordDense<F>,
         k: u32,
-    ) -> Result<RoundWordDense, Error> {
+    ) -> Result<RoundWordDense<F>, Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];
@@ -630,8 +635,8 @@ impl CompressionConfig {
         let k: [bool; 32] = i2lebsp(k.into());
         let k_lo: [bool; 16] = k[..16].try_into().unwrap();
         let k_hi: [bool; 16] = k[16..].try_into().unwrap();
-        AssignedBits::<16>::assign_bits(region, || "k_lo", a_3, row + 2, Value::known(k_lo))?;
-        AssignedBits::<16>::assign_bits(region, || "k_hi", a_4, row + 2, Value::known(k_hi))?;
+        AssignedBits::<16, F>::assign_bits(region, || "k_lo", a_3, row + 2, Value::known(k_lo))?;
+        AssignedBits::<16, F>::assign_bits(region, || "k_hi", a_4, row + 2, Value::known(k_hi))?;
 
         let (sum, carry) = sum_with_carry(vec![
             (a.0.value_u16(), a.1.value_u16()),
@@ -647,7 +652,7 @@ impl CompressionConfig {
             || "sum_afxk_carry",
             a_5,
             row + 2,
-            || carry.map(|value| pallas::Base::from(value as u64)),
+            || carry.map(|value| F::from(value as u64)),
         )?;
 
         let sum: Value<[bool; 32]> = sum.map(|w| i2lebsp(w.into()));
@@ -666,11 +671,11 @@ impl CompressionConfig {
     //
     pub(super) fn assign_sum_re(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        rol: RoundWordDense,
-        e: RoundWordDense,
-    ) -> Result<RoundWord, Error> {
+        rol: RoundWordDense<F>,
+        e: RoundWordDense<F>,
+    ) -> Result<RoundWord<F>, Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];
@@ -692,7 +697,7 @@ impl CompressionConfig {
             || "sum_re_carry",
             a_5,
             row,
-            || carry.map(|value| pallas::Base::from(value as u64)),
+            || carry.map(|value| F::from(value as u64)),
         )?;
 
         let sum: Value<[bool; 32]> = sum.map(|w| i2lebsp(w.into()));
@@ -714,12 +719,12 @@ impl CompressionConfig {
     //
     pub(super) fn assign_sum_combine_ilr(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        init_state_word: RoundWordDense,
-        left_state_word: RoundWordDense,
-        right_state_word: RoundWordDense,
-    ) -> Result<RoundWord, Error> {
+        init_state_word: RoundWordDense<F>,
+        left_state_word: RoundWordDense<F>,
+        right_state_word: RoundWordDense<F>,
+    ) -> Result<RoundWord<F>, Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
         let a_5 = self.advice[2];
@@ -761,7 +766,7 @@ impl CompressionConfig {
             || "sum_combine_ilr_carry",
             a_3,
             row + 2,
-            || carry.map(|value| pallas::Base::from(value as u64)),
+            || carry.map(|value| F::from(value as u64)),
         )?;
 
         let sum: Value<[bool; 32]> = sum.map(|w| i2lebsp(w.into()));
@@ -783,7 +788,7 @@ impl CompressionConfig {
     //  row + 3 |     | R_1_odd   | spread_R_1_odd  |
     fn assign_spread_outputs(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         lookup: &SpreadInputs,
         row: usize,
         r_0_even: Value<[bool; 16]>,
@@ -792,8 +797,8 @@ impl CompressionConfig {
         r_1_odd: Value<[bool; 16]>,
     ) -> Result<
         (
-            (AssignedBits<16>, AssignedBits<16>),
-            (AssignedBits<16>, AssignedBits<16>),
+            (AssignedBits<16, F>, AssignedBits<16, F>),
+            (AssignedBits<16, F>, AssignedBits<16, F>),
         ),
         Error,
     > {
@@ -830,15 +835,15 @@ impl CompressionConfig {
     // row + 1 |     |  R_1  | spread_R_1 |
     fn assign_spread_word(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         lookup: &SpreadInputs,
         row: usize,
         r_lo: Value<[bool; 16]>,
         r_hi: Value<[bool; 16]>,
     ) -> Result<
         (
-            (AssignedBits<16>, AssignedBits<16>),
-            (AssignedBits<32>, AssignedBits<32>),
+            (AssignedBits<16, F>, AssignedBits<16, F>),
+            (AssignedBits<32, F>, AssignedBits<32, F>),
         ),
         Error,
     > {
@@ -860,11 +865,11 @@ impl CompressionConfig {
     //
     pub(super) fn assign_spread_dense_word(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         lookup: &SpreadInputs,
         row: usize,
-        word: RoundWordDense,
-    ) -> Result<RoundWord, Error> {
+        word: RoundWordDense<F>,
+    ) -> Result<RoundWord<F>, Error> {
         // Lookup R_lo, R_hi
         let word_bits = word.value().map(|a| i2lebsp::<32>(a.into()));
 
@@ -889,10 +894,10 @@ impl CompressionConfig {
 
     pub(super) fn assign_decompose_word(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        word_lo: AssignedBits<16>,
-        word_hi: AssignedBits<16>,
+        word_lo: AssignedBits<16, F>,
+        word_hi: AssignedBits<16, F>,
         word: Value<u32>,
     ) -> Result<(), Error> {
         let a_3 = self.advice[0];
@@ -901,7 +906,7 @@ impl CompressionConfig {
 
         self.s_decompose_word.enable(region, row)?;
 
-        AssignedBits::<32>::assign(region, || "word(u32)", a_5, row, word)?;
+        AssignedBits::<32, F>::assign(region, || "word(u32)", a_5, row, word)?;
 
         word_lo.copy_advice(|| "word_lo", region, a_3, row)?;
         word_hi.copy_advice(|| "word_hi", region, a_4, row)?;
@@ -911,9 +916,9 @@ impl CompressionConfig {
 
     pub(super) fn assign_decompose_word_dense(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         row: usize,
-        word: RoundWordDense,
+        word: RoundWordDense<F>,
     ) -> Result<(), Error> {
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];
@@ -921,7 +926,7 @@ impl CompressionConfig {
 
         self.s_decompose_word.enable(region, row)?;
 
-        AssignedBits::<32>::assign(region, || "word(u32)", a_5, row, word.value())?;
+        AssignedBits::<32, F>::assign(region, || "word(u32)", a_5, row, word.value())?;
 
         word.0.copy_advice(|| "word_lo", region, a_3, row)?;
         word.1.copy_advice(|| "word_hi", region, a_4, row)?;
@@ -930,14 +935,14 @@ impl CompressionConfig {
     }
 }
 
-pub fn match_state(
-    state: State,
+pub fn match_state<F: FieldExt>(
+    state: State<F>,
 ) -> (
-    RoundWordDense,
-    RoundWord,
-    RoundWord,
-    RoundWord,
-    RoundWordDense,
+    RoundWordDense<F>,
+    RoundWord<F>,
+    RoundWord<F>,
+    RoundWord<F>,
+    RoundWordDense<F>,
 ) {
     let a = match state.a {
         Some(StateWord::A(a)) => a,

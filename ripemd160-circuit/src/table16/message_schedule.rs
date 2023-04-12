@@ -1,6 +1,8 @@
+use std::marker::PhantomData;
+
 use halo2_proofs::{
     circuit::{Layouter, Region, Value},
-    halo2curves::pasta::pallas,
+    halo2curves::FieldExt,
     plonk::{Advice, Column, ConstraintSystem, Error, Selector},
     poly::Rotation,
 };
@@ -16,10 +18,10 @@ use super::{
 pub const DECOMPOSE_WORD_ROWS: usize = 2;
 
 #[derive(Debug, Clone)]
-pub(super) struct MessageWord(AssignedBits<32>);
+pub(super) struct MessageWord<F: FieldExt>(AssignedBits<32, F>);
 
-impl std::ops::Deref for MessageWord {
-    type Target = AssignedBits<32>;
+impl<F: FieldExt> std::ops::Deref for MessageWord<F> {
+    type Target = AssignedBits<32, F>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -27,24 +29,26 @@ impl std::ops::Deref for MessageWord {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct MessageScheduleConfig {
+pub(super) struct MessageScheduleConfig<F: FieldExt> {
     lookup: SpreadInputs,
     advice: [Column<Advice>; NUM_ADVICE_COLS],
 
     /// Decomposition gate for X[0..16]
     s_decompose_word: Selector,
+
+    _marker: PhantomData<F>,
 }
 
-impl Table16Assignment for MessageScheduleConfig {}
+impl<F: FieldExt> Table16Assignment<F> for MessageScheduleConfig<F> {}
 
-impl MessageScheduleConfig {
+impl<F: FieldExt> MessageScheduleConfig<F> {
     /// Configures the message schedule
     ///
     /// `advice` contains columns that the message schedule will only use for internal
     /// gates, and will not place any constraints on (such as lookup constraints) outside
     /// itself.
     pub(super) fn configure(
-        meta: &mut ConstraintSystem<pallas::Base>,
+        meta: &mut ConstraintSystem<F>,
         lookup: SpreadInputs,
         advice: [Column<Advice>; NUM_ADVICE_COLS],
         s_decompose_word: Selector,
@@ -68,28 +72,31 @@ impl MessageScheduleConfig {
             lookup,
             advice,
             s_decompose_word,
+            _marker: PhantomData,
         }
     }
 
     pub(super) fn process(
         &self,
-        layouter: &mut impl Layouter<pallas::Base>,
+        layouter: &mut impl Layouter<F>,
         input: [BlockWord; BLOCK_SIZE],
     ) -> Result<
         (
-            [MessageWord; BLOCK_SIZE],
-            [(AssignedBits<16>, AssignedBits<16>); BLOCK_SIZE],
+            [MessageWord<F>; BLOCK_SIZE],
+            [(AssignedBits<16, F>, AssignedBits<16, F>); BLOCK_SIZE],
         ),
         Error,
     > {
-        let mut w = Vec::<MessageWord>::with_capacity(BLOCK_SIZE);
-        let mut w_halves = Vec::<(AssignedBits<16>, AssignedBits<16>)>::with_capacity(BLOCK_SIZE);
+        let mut w = Vec::<MessageWord<F>>::with_capacity(BLOCK_SIZE);
+        let mut w_halves =
+            Vec::<(AssignedBits<16, F>, AssignedBits<16, F>)>::with_capacity(BLOCK_SIZE);
 
         layouter.assign_region(
             || "process message block",
             |mut region| {
-                w = Vec::<MessageWord>::with_capacity(BLOCK_SIZE);
-                w_halves = Vec::<(AssignedBits<16>, AssignedBits<16>)>::with_capacity(BLOCK_SIZE);
+                w = Vec::<MessageWord<F>>::with_capacity(BLOCK_SIZE);
+                w_halves =
+                    Vec::<(AssignedBits<16, F>, AssignedBits<16, F>)>::with_capacity(BLOCK_SIZE);
 
                 // Assign X[0..16]
                 for (row, word) in input.iter().enumerate() {
@@ -113,14 +120,20 @@ pub fn get_word_row(word_idx: usize) -> usize {
     word_idx * BLOCK_SIZE
 }
 
-impl MessageScheduleConfig {
+impl<F: FieldExt> MessageScheduleConfig<F> {
     // Assign a word and its hi and lo halves
     pub fn assign_msgblk_word_and_halves(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         word: Value<u32>,
         word_idx: usize,
-    ) -> Result<(AssignedBits<32>, (AssignedBits<16>, AssignedBits<16>)), Error> {
+    ) -> Result<
+        (
+            AssignedBits<32, F>,
+            (AssignedBits<16, F>, AssignedBits<16, F>),
+        ),
+        Error,
+    > {
         // Rename these here for ease of matching the gates to the spec
         let a_3 = self.advice[0];
         let a_4 = self.advice[1];

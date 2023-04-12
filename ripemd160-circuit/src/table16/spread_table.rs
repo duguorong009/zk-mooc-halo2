@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use halo2_proofs::{
     circuit::{Chip, Layouter, Region, Value},
-    halo2curves::{pasta::pallas, FieldExt},
+    halo2curves::FieldExt,
     plonk::{Advice, Column, ConstraintSystem, Error, TableColumn},
     poly::Rotation,
 };
@@ -82,15 +82,15 @@ impl<const DENSE: usize, const SPREAD: usize> SpreadWord<DENSE, SPREAD> {
 
 /// Variable stored in advice columns corresponding to a row of [`SpreadTableConfig`].
 #[derive(Debug, Clone)]
-pub(super) struct SpreadVar<const DENSE: usize, const SPREAD: usize> {
+pub(super) struct SpreadVar<const DENSE: usize, const SPREAD: usize, F: FieldExt> {
     pub tag: Value<u8>,
-    pub dense: AssignedBits<DENSE>,
-    pub spread: AssignedBits<SPREAD>,
+    pub dense: AssignedBits<DENSE, F>,
+    pub spread: AssignedBits<SPREAD, F>,
 }
 
-impl<const DENSE: usize, const SPREAD: usize> SpreadVar<DENSE, SPREAD> {
+impl<const DENSE: usize, const SPREAD: usize, F: FieldExt> SpreadVar<DENSE, SPREAD, F> {
     pub(super) fn with_lookup(
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         cols: &SpreadInputs,
         row: usize,
         word: Value<SpreadWord<DENSE, SPREAD>>,
@@ -103,20 +103,25 @@ impl<const DENSE: usize, const SPREAD: usize> SpreadVar<DENSE, SPREAD> {
             || "tag",
             cols.tag,
             row,
-            || tag.map(|tag| pallas::Base::from(tag as u64)),
+            || tag.map(|tag| F::from(tag as u64)),
         )?;
 
         let dense =
-            AssignedBits::<DENSE>::assign_bits(region, || "dense", cols.dense, row, dense_val)?;
+            AssignedBits::<DENSE, F>::assign_bits(region, || "dense", cols.dense, row, dense_val)?;
 
-        let spread =
-            AssignedBits::<SPREAD>::assign_bits(region, || "spread", cols.spread, row, spread_val)?;
+        let spread = AssignedBits::<SPREAD, F>::assign_bits(
+            region,
+            || "spread",
+            cols.spread,
+            row,
+            spread_val,
+        )?;
 
         Ok(SpreadVar { tag, dense, spread })
     }
 
     pub(super) fn without_lookup(
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         dense_col: Column<Advice>,
         dense_row: usize,
         spread_col: Column<Advice>,
@@ -127,7 +132,7 @@ impl<const DENSE: usize, const SPREAD: usize> SpreadVar<DENSE, SPREAD> {
         let dense_val = word.map(|word| word.dense);
         let spread_val = word.map(|word| word.spread);
 
-        let dense = AssignedBits::<DENSE>::assign_bits(
+        let dense = AssignedBits::<DENSE, F>::assign_bits(
             region,
             || "dense",
             dense_col,
@@ -135,7 +140,7 @@ impl<const DENSE: usize, const SPREAD: usize> SpreadVar<DENSE, SPREAD> {
             dense_val,
         )?;
 
-        let spread = AssignedBits::<SPREAD>::assign_bits(
+        let spread = AssignedBits::<SPREAD, F>::assign_bits(
             region,
             || "spread",
             spread_col,

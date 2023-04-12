@@ -1,6 +1,8 @@
+use std::marker::PhantomData;
+
 use halo2_proofs::{
     circuit::{Layouter, Value},
-    halo2curves::pasta::pallas,
+    halo2curves::FieldExt,
     plonk::{Advice, Column, ConstraintSystem, Error, Selector},
     poly::Rotation,
 };
@@ -21,15 +23,15 @@ mod subregion_initial;
 mod subregion_main;
 
 #[derive(Debug, Clone)]
-pub struct RoundWordDense(AssignedBits<16>, AssignedBits<16>);
+pub struct RoundWordDense<F: FieldExt>(AssignedBits<16, F>, AssignedBits<16, F>);
 
-impl From<(AssignedBits<16>, AssignedBits<16>)> for RoundWordDense {
-    fn from(halves: (AssignedBits<16>, AssignedBits<16>)) -> Self {
+impl<F: FieldExt> From<(AssignedBits<16, F>, AssignedBits<16, F>)> for RoundWordDense<F> {
+    fn from(halves: (AssignedBits<16, F>, AssignedBits<16, F>)) -> Self {
         Self(halves.0, halves.1)
     }
 }
 
-impl RoundWordDense {
+impl<F: FieldExt> RoundWordDense<F> {
     pub fn value(&self) -> Value<u32> {
         self.0
             .value_u16()
@@ -39,15 +41,15 @@ impl RoundWordDense {
 }
 
 #[derive(Debug, Clone)]
-pub struct RoundWordSpread(AssignedBits<32>, AssignedBits<32>);
+pub struct RoundWordSpread<F: FieldExt>(AssignedBits<32, F>, AssignedBits<32, F>);
 
-impl From<(AssignedBits<32>, AssignedBits<32>)> for RoundWordSpread {
-    fn from(halves: (AssignedBits<32>, AssignedBits<32>)) -> Self {
+impl<F: FieldExt> From<(AssignedBits<32, F>, AssignedBits<32, F>)> for RoundWordSpread<F> {
+    fn from(halves: (AssignedBits<32, F>, AssignedBits<32, F>)) -> Self {
         Self(halves.0, halves.1)
     }
 }
 
-impl RoundWordSpread {
+impl<F: FieldExt> RoundWordSpread<F> {
     pub fn value(&self) -> Value<u64> {
         self.0
             .value_u32()
@@ -57,13 +59,13 @@ impl RoundWordSpread {
 }
 
 #[derive(Debug, Clone)]
-pub struct RoundWord {
-    dense_halves: RoundWordDense,
-    spread_halves: RoundWordSpread,
+pub struct RoundWord<F: FieldExt> {
+    dense_halves: RoundWordDense<F>,
+    spread_halves: RoundWordSpread<F>,
 }
 
-impl RoundWord {
-    pub fn new(dense_halves: RoundWordDense, spread_halves: RoundWordSpread) -> Self {
+impl<F: FieldExt> RoundWord<F> {
+    pub fn new(dense_halves: RoundWordDense<F>, spread_halves: RoundWordSpread<F>) -> Self {
         RoundWord {
             dense_halves,
             spread_halves,
@@ -73,16 +75,22 @@ impl RoundWord {
 
 /// Internal state for RIPEMD160
 #[derive(Debug, Clone)]
-pub struct State {
-    a: Option<StateWord>,
-    b: Option<StateWord>,
-    c: Option<StateWord>,
-    d: Option<StateWord>,
-    e: Option<StateWord>,
+pub struct State<F: FieldExt> {
+    a: Option<StateWord<F>>,
+    b: Option<StateWord<F>>,
+    c: Option<StateWord<F>>,
+    d: Option<StateWord<F>>,
+    e: Option<StateWord<F>>,
 }
 
-impl State {
-    pub fn new(a: StateWord, b: StateWord, c: StateWord, d: StateWord, e: StateWord) -> Self {
+impl<F: FieldExt> State<F> {
+    pub fn new(
+        a: StateWord<F>,
+        b: StateWord<F>,
+        c: StateWord<F>,
+        d: StateWord<F>,
+        e: StateWord<F>,
+    ) -> Self {
         State {
             a: Some(a),
             b: Some(b),
@@ -104,12 +112,12 @@ impl State {
 }
 
 #[derive(Debug, Clone)]
-pub enum StateWord {
-    A(RoundWordDense),
-    B(RoundWord),
-    C(RoundWord),
-    D(RoundWord),
-    E(RoundWordDense),
+pub enum StateWord<F: FieldExt> {
+    A(RoundWordDense<F>),
+    B(RoundWord<F>),
+    C(RoundWord<F>),
+    D(RoundWord<F>),
+    E(RoundWordDense<F>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -119,7 +127,7 @@ pub enum RoundSide {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct CompressionConfig {
+pub(super) struct CompressionConfig<F: FieldExt> {
     lookup: SpreadInputs,
     advice: [Column<Advice>; NUM_ADVICE_COLS],
 
@@ -131,13 +139,15 @@ pub(super) struct CompressionConfig {
     s_sum_afxk: Selector,
     s_sum_re: Selector,
     s_sum_combine_ilr: Selector,
+
+    _marker: PhantomData<F>,
 }
 
-impl Table16Assignment for CompressionConfig {}
+impl<F: FieldExt> Table16Assignment<F> for CompressionConfig<F> {}
 
-impl CompressionConfig {
+impl<F: FieldExt> CompressionConfig<F> {
     pub(super) fn configure(
-        meta: &mut ConstraintSystem<pallas::Base>,
+        meta: &mut ConstraintSystem<F>,
         lookup: SpreadInputs,
         advice: [Column<Advice>; NUM_ADVICE_COLS],
         s_decompose_word: Selector,
@@ -673,6 +683,7 @@ impl CompressionConfig {
             s_sum_afxk,
             s_sum_re,
             s_sum_combine_ilr,
+            _marker: PhantomData,
         }
     }
 
@@ -680,9 +691,9 @@ impl CompressionConfig {
     /// Returns an initialized state.
     pub(super) fn init_with_iv(
         &self,
-        layouter: &mut impl Layouter<pallas::Base>,
+        layouter: &mut impl Layouter<F>,
         init_state: [u32; DIGEST_SIZE],
-    ) -> Result<State, Error> {
+    ) -> Result<State<F>, Error> {
         let mut new_state = State::empty_state();
         layouter.assign_region(
             || "init_with_iv",
@@ -697,10 +708,10 @@ impl CompressionConfig {
     /// Given an initialized state and a message schedule, perform 80 compression rounds.
     pub(super) fn compress(
         &self,
-        layouter: &mut impl Layouter<pallas::Base>,
-        initialized_state: State,
-        w_halves: [(AssignedBits<16>, AssignedBits<16>); BLOCK_SIZE],
-    ) -> Result<State, Error> {
+        layouter: &mut impl Layouter<F>,
+        initialized_state: State<F>,
+        w_halves: [(AssignedBits<16, F>, AssignedBits<16, F>); BLOCK_SIZE],
+    ) -> Result<State<F>, Error> {
         let mut left_state = State::empty_state();
         let mut right_state = State::empty_state();
         let mut final_state = State::empty_state();
@@ -745,8 +756,8 @@ impl CompressionConfig {
     /// After the final round, convert the state into the final digest.
     pub(super) fn digest(
         &self,
-        layouter: &mut impl Layouter<pallas::Base>,
-        state: State,
+        layouter: &mut impl Layouter<F>,
+        state: State<F>,
     ) -> Result<[BlockWord; DIGEST_SIZE], Error> {
         let mut digest = [BlockWord(Value::known(0)); DIGEST_SIZE];
         layouter.assign_region(
@@ -764,7 +775,8 @@ impl CompressionConfig {
 #[cfg(test)]
 mod tests {
     use halo2_proofs::circuit::Value;
-    use halo2_proofs::halo2curves::pasta::pallas;
+    use halo2_proofs::halo2curves::bn256::Fr;
+    use halo2_proofs::halo2curves::FieldExt;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner},
         dev::MockProver,
@@ -781,22 +793,22 @@ mod tests {
     fn test_compression() {
         struct MyCircuit {}
 
-        impl Circuit<pallas::Base> for MyCircuit {
-            type Config = Table16Config;
+        impl<F: FieldExt> Circuit<F> for MyCircuit {
+            type Config = Table16Config<F>;
             type FloorPlanner = SimpleFloorPlanner;
 
             fn without_witnesses(&self) -> Self {
                 MyCircuit {}
             }
 
-            fn configure(meta: &mut ConstraintSystem<pallas::Base>) -> Self::Config {
+            fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
                 Table16Chip::configure(meta)
             }
 
             fn synthesize(
                 &self,
                 config: Self::Config,
-                mut layouter: impl Layouter<pallas::Base>,
+                mut layouter: impl Layouter<F>,
             ) -> Result<(), Error> {
                 Table16Chip::load(config.clone(), &mut layouter)?;
 
@@ -833,21 +845,21 @@ mod tests {
                             .compression
                             .s_decompose_word
                             .enable(&mut region, row)?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected_a_lo",
                             a_3,
                             row,
                             a.0.value_u16(),
                         )?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected_a_hi",
                             a_4,
                             row,
                             a.1.value_u16(),
                         )?;
-                        AssignedBits::<32>::assign(
+                        AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual a",
                             a_5,
@@ -860,21 +872,21 @@ mod tests {
                             .compression
                             .s_decompose_word
                             .enable(&mut region, row)?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected_b_lo",
                             a_3,
                             row,
                             b.dense_halves.0.value_u16(),
                         )?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected_b_hi",
                             a_4,
                             row,
                             b.dense_halves.1.value_u16(),
                         )?;
-                        AssignedBits::<32>::assign(
+                        AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual b",
                             a_5,
@@ -887,21 +899,21 @@ mod tests {
                             .compression
                             .s_decompose_word
                             .enable(&mut region, row)?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected c_lo",
                             a_3,
                             row,
                             c.dense_halves.0.value_u16(),
                         )?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected c_hi",
                             a_4,
                             row,
                             c.dense_halves.1.value_u16(),
                         )?;
-                        AssignedBits::<32>::assign(
+                        AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual c",
                             a_5,
@@ -914,21 +926,21 @@ mod tests {
                             .compression
                             .s_decompose_word
                             .enable(&mut region, row)?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected d_lo",
                             a_3,
                             row,
                             d.dense_halves.0.value_u16(),
                         )?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected d_hi",
                             a_4,
                             row,
                             d.dense_halves.1.value_u16(),
                         )?;
-                        AssignedBits::<32>::assign(
+                        AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual d",
                             a_5,
@@ -937,21 +949,21 @@ mod tests {
                         )?;
 
                         row += 1;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected e_lo",
                             a_3,
                             row,
                             e.0.value_u16(),
                         )?;
-                        AssignedBits::<16>::assign(
+                        AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected e_hi",
                             a_4,
                             row,
                             e.1.value_u16(),
                         )?;
-                        AssignedBits::<32>::assign(
+                        AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual e",
                             a_5,
@@ -974,7 +986,7 @@ mod tests {
 
         let circuit: MyCircuit = MyCircuit {};
 
-        let prover = match MockProver::<pallas::Base>::run(17, &circuit, vec![]) {
+        let prover = match MockProver::<Fr>::run(17, &circuit, vec![]) {
             Ok(prover) => prover,
             Err(e) => panic!("{:?}", e),
         };

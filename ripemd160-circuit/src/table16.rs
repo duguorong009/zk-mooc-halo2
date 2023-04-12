@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use halo2_proofs::{
     circuit::{AssignedCell, Chip, Layouter, Region, Value},
-    halo2curves::pasta::pallas,
+    halo2curves::FieldExt,
     plonk::{Advice, Any, Assigned, Column, ConstraintSystem, Error},
 };
 
@@ -63,10 +63,10 @@ impl<const LEN: usize> From<&Bits<LEN>> for [bool; LEN] {
     }
 }
 
-impl<const LEN: usize> From<&Bits<LEN>> for Assigned<pallas::Base> {
+impl<const LEN: usize, F: FieldExt> From<&Bits<LEN>> for Assigned<F> {
     fn from(bits: &Bits<LEN>) -> Self {
         assert!(LEN <= 64);
-        pallas::Base::from(lebs2ip(&bits.0)).into()
+        F::from(lebs2ip(&bits.0)).into()
     }
 }
 
@@ -95,19 +95,19 @@ impl From<u32> for Bits<32> {
 }
 
 #[derive(Debug, Clone)]
-pub struct AssignedBits<const LEN: usize>(AssignedCell<Bits<LEN>, pallas::Base>);
+pub struct AssignedBits<const LEN: usize, F: FieldExt>(AssignedCell<Bits<LEN>, F>);
 
-impl<const LEN: usize> std::ops::Deref for AssignedBits<LEN> {
-    type Target = AssignedCell<Bits<LEN>, pallas::Base>;
+impl<const LEN: usize, F: FieldExt> std::ops::Deref for AssignedBits<LEN, F> {
+    type Target = AssignedCell<Bits<LEN>, F>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<const LEN: usize> AssignedBits<LEN> {
+impl<const LEN: usize, F: FieldExt> AssignedBits<LEN, F> {
     fn assign_bits<A, AR, T: TryInto<[bool; LEN]> + std::fmt::Debug + Clone>(
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         annotation: A,
         column: impl Into<Column<Any>>,
         offset: usize,
@@ -139,13 +139,13 @@ impl<const LEN: usize> AssignedBits<LEN> {
     }
 }
 
-impl AssignedBits<16> {
+impl<F: FieldExt> AssignedBits<16, F> {
     fn value_u16(&self) -> Value<u16> {
         self.value().map(|v| v.into())
     }
 
     fn assign<A, AR>(
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         annotation: A,
         column: impl Into<Column<Any>>,
         offset: usize,
@@ -174,13 +174,13 @@ impl AssignedBits<16> {
     }
 }
 
-impl AssignedBits<32> {
+impl<F: FieldExt> AssignedBits<32, F> {
     fn value_u32(&self) -> Value<u32> {
         self.value().map(|v| v.into())
     }
 
     fn assign<A, AR>(
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         annotation: A,
         column: impl Into<Column<Any>>,
         offset: usize,
@@ -213,21 +213,20 @@ pub const NUM_ADVICE_COLS: usize = 3;
 
 /// Configuration of [`Table16Chip`]
 #[derive(Clone, Debug)]
-pub struct Table16Config {
+pub struct Table16Config<F: FieldExt> {
     lookup: SpreadTableConfig,
-    message_schedule: MessageScheduleConfig,
-    compression: CompressionConfig,
+    message_schedule: MessageScheduleConfig<F>,
+    compression: CompressionConfig<F>,
 }
 
 /// A chip that implement the RIPEMD-160 with a maximum lookup table size of $2^16$.
 #[derive(Debug, Clone)]
-pub struct Table16Chip {
-    config: Table16Config,
-    _marker: PhantomData<pallas::Base>,
+pub struct Table16Chip<F: FieldExt> {
+    config: Table16Config<F>,
 }
 
-impl Chip<pallas::Base> for Table16Chip {
-    type Config = Table16Config;
+impl<F: FieldExt> Chip<F> for Table16Chip<F> {
+    type Config = Table16Config<F>;
     type Loaded = ();
 
     fn config(&self) -> &Self::Config {
@@ -239,19 +238,14 @@ impl Chip<pallas::Base> for Table16Chip {
     }
 }
 
-impl Table16Chip {
+impl<F: FieldExt> Table16Chip<F> {
     /// Reconstructs this chip from the given config.
-    pub fn construct(config: <Self as Chip<pallas::Base>>::Config) -> Self {
-        Self {
-            config,
-            _marker: PhantomData,
-        }
+    pub fn construct(config: <Self as Chip<F>>::Config) -> Self {
+        Self { config }
     }
 
     /// Configure a circuit to include this chip.
-    pub fn configure(
-        meta: &mut ConstraintSystem<pallas::Base>,
-    ) -> <Self as Chip<pallas::Base>>::Config {
+    pub fn configure(meta: &mut ConstraintSystem<F>) -> <Self as Chip<F>>::Config {
         // columns required for this chip
         let advice: [Column<Advice>; NUM_ADVICE_COLS] = [
             meta.advice_column(),
@@ -296,22 +290,16 @@ impl Table16Chip {
     }
 
     /// Loads the lookup table required by this chip into the circuit
-    pub fn load(
-        config: Table16Config,
-        layouter: &mut impl Layouter<pallas::Base>,
-    ) -> Result<(), Error> {
+    pub fn load(config: Table16Config<F>, layouter: &mut impl Layouter<F>) -> Result<(), Error> {
         SpreadTableChip::load(config.lookup, layouter)
     }
 }
 
-impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
-    type State = State;
+impl<F: FieldExt> RIPEMD160Instructions<F> for Table16Chip<F> {
+    type State = State<F>;
     type BlockWord = BlockWord;
 
-    fn init_vector(
-        &self,
-        layouter: &mut impl Layouter<pallas::Base>,
-    ) -> Result<Self::State, Error> {
+    fn init_vector(&self, layouter: &mut impl Layouter<F>) -> Result<Self::State, Error> {
         self.config()
             .compression
             .init_with_iv(layouter, INITIAL_VALUES)
@@ -321,7 +309,7 @@ impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
     // message block and return the final state
     fn compress(
         &self,
-        layouter: &mut impl Layouter<pallas::Base>,
+        layouter: &mut impl Layouter<F>,
         initialized_state: &Self::State,
         input: [Self::BlockWord; crate::constants::BLOCK_SIZE],
     ) -> Result<Self::State, Error> {
@@ -334,7 +322,7 @@ impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
 
     fn digest(
         &self,
-        layouter: &mut impl Layouter<pallas::Base>,
+        layouter: &mut impl Layouter<F>,
         state: &Self::State,
     ) -> Result<[Self::BlockWord; crate::constants::DIGEST_SIZE], Error> {
         // Copy the dense forms of the state variable chunks down to this gate.
@@ -344,18 +332,24 @@ impl RIPEMD160Instructions<pallas::Base> for Table16Chip {
 }
 
 /// Common assignment patterns used by Table16 regions.
-trait Table16Assignment {
+trait Table16Assignment<F: FieldExt> {
     fn assign_word_and_halves<A, AR>(
         &self,
         annotation: A,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         lookup: &SpreadInputs,
         a_3: Column<Advice>,
         a_4: Column<Advice>,
         a_5: Column<Advice>,
         word: Value<u32>,
         row: usize,
-    ) -> Result<(AssignedBits<32>, (SpreadVar<16, 32>, SpreadVar<16, 32>)), Error>
+    ) -> Result<
+        (
+            AssignedBits<32, F>,
+            (SpreadVar<16, 32, F>, SpreadVar<16, 32, F>),
+        ),
+        Error,
+    >
     where
         A: Fn() -> AR,
         AR: Into<String>,
@@ -376,7 +370,7 @@ trait Table16Assignment {
             .dense
             .copy_advice(&annotation, region, a_4, row)?;
 
-        let w = AssignedBits::<32>::assign(region, annotation, a_5, row, word)?;
+        let w = AssignedBits::<32, F>::assign(region, annotation, a_5, row, word)?;
 
         Ok((w, (spread_w_lo, spread_w_hi)))
     }

@@ -869,6 +869,7 @@ mod tests {
     use halo2_proofs::circuit::{Layouter, Region, SimpleFloorPlanner, Value};
     use halo2_proofs::dev::MockProver;
     use halo2_proofs::halo2curves::pasta::Fp;
+    use halo2_proofs::halo2curves::FieldExt;
     use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
     use rand::Rng;
 
@@ -878,9 +879,9 @@ mod tests {
     use crate::table16::Table16Assignment;
 
     #[derive(Debug, Clone)]
-    struct CompressionGateTesterConfig {
+    struct CompressionGateTesterConfig<F: FieldExt> {
         lookup: SpreadTableConfig,
-        compression: CompressionConfig,
+        compression: CompressionConfig<F>,
     }
 
     struct CompressionGateTester {
@@ -910,7 +911,7 @@ mod tests {
     }
 
     impl Circuit<Fp> for CompressionGateTester {
-        type Config = CompressionGateTesterConfig;
+        type Config = CompressionGateTesterConfig<Fp>;
         type FloorPlanner = SimpleFloorPlanner;
 
         fn without_witnesses(&self) -> Self {

@@ -1,15 +1,16 @@
-use halo2_proofs::{circuit::Region, halo2curves::pasta::pallas, plonk::Error};
+use halo2_proofs::halo2curves::FieldExt;
+use halo2_proofs::{circuit::Region, plonk::Error};
 
 use crate::table16::compression::compression_util::*;
 use crate::{constants::DIGEST_SIZE, table16::BlockWord};
 
 use super::{CompressionConfig, State};
 
-impl CompressionConfig {
+impl<F: FieldExt> CompressionConfig<F> {
     pub fn assign_digest(
         &self,
-        region: &mut Region<'_, pallas::Base>,
-        state: State,
+        region: &mut Region<'_, F>,
+        state: State<F>,
     ) -> Result<[BlockWord; DIGEST_SIZE], Error> {
         let (a, b, c, d, e) = match_state(state);
 

@@ -1,4 +1,4 @@
-use halo2_proofs::halo2curves::pasta::pallas;
+use halo2_proofs::halo2curves::FieldExt;
 use halo2_proofs::{circuit::Region, plonk::Error};
 
 use super::RoundSide::{self, Left, Right};
@@ -10,16 +10,16 @@ use crate::constants::{
 use crate::table16::compression::compression_util::*;
 use crate::table16::AssignedBits;
 
-impl CompressionConfig {
+impl<F: FieldExt> CompressionConfig<F> {
     pub fn assign_round(
         &self,
-        region: &mut Region<'_, pallas::Base>,
+        region: &mut Region<'_, F>,
         round_idx: usize,
-        state: State,
-        message_word_halves: [(AssignedBits<16>, AssignedBits<16>); BLOCK_SIZE],
+        state: State<F>,
+        message_word_halves: [(AssignedBits<16, F>, AssignedBits<16, F>); BLOCK_SIZE],
         row: &mut usize,
         round_side: RoundSide,
-    ) -> Result<State, Error> {
+    ) -> Result<State<F>, Error> {
         let (a, b, c, d, e) = match_state(state);
 
         let phase_idx = 1 + round_idx / ROUND_PHASE_SIZE;
@@ -142,12 +142,12 @@ impl CompressionConfig {
 
     pub fn assign_combine_ilr(
         &self,
-        region: &mut Region<'_, pallas::Base>,
-        init_state: State,
-        left_state: State,
-        right_state: State,
+        region: &mut Region<'_, F>,
+        init_state: State<F>,
+        left_state: State<F>,
+        right_state: State<F>,
         row: &mut usize,
-    ) -> Result<State, Error> {
+    ) -> Result<State<F>, Error> {
         let (h0, h1, h2, h3, h4) = match_state(init_state);
         let (a_left, b_left, c_left, d_left, e_left) = match_state(left_state);
         let (a_right, b_right, c_right, d_right, e_right) = match_state(right_state);

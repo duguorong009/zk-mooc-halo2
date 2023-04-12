@@ -637,7 +637,7 @@ impl CompressionConfig {
         });
 
         meta.create_gate("s_sum_combine_ilr", |meta| {
-            let s_sum_re = meta.query_selector(s_sum_combine_ilr);
+            let s_sum_ilr = meta.query_selector(s_sum_combine_ilr);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());
             let sum_hi = meta.query_advice(a_1, Rotation::next());
             let init_state_lo = meta.query_advice(a_3, Rotation::cur());
@@ -649,7 +649,7 @@ impl CompressionConfig {
             let carry = meta.query_advice(a_3, Rotation(2));
 
             CompressionGate::sum_combine_ilr(
-                s_sum_re,
+                s_sum_ilr,
                 sum_lo,
                 sum_hi,
                 carry,

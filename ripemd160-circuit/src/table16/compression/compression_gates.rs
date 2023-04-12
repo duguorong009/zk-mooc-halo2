@@ -831,7 +831,7 @@ impl<F: FieldExt> CompressionGate<F> {
     // Gate for combining the initial, left, and right states of RIPEMD160
     // after the 80 rounds
     pub fn sum_combine_ilr(
-        s_sum_re: Expression<F>,
+        s_sum_ilr: Expression<F>,
         sum_lo: Expression<F>,
         sum_hi: Expression<F>,
         carry: Expression<F>,
@@ -856,7 +856,7 @@ impl<F: FieldExt> CompressionGate<F> {
         let sum_check = sum - (carry * F::from(1 << 32)) - mod_sum;
 
         Constraints::with_selector(
-            s_sum_re,
+            s_sum_ilr,
             std::iter::empty()
                 .chain(Some(("range_check_carry", range_check_carry)))
                 .chain(Some(("sum_re", sum_check))),

@@ -7,66 +7,8 @@ use std::{fmt, marker::PhantomData};
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{Chip, Layouter},
-    plonk::{Advice, Any, Column, ConstraintSystem, Error},
+    plonk::{ConstraintSystem, Error},
 };
-
-#[derive(Clone, Debug)]
-pub struct Ripemd160Table {
-    id: Column<Advice>,
-}
-
-impl Ripemd160Table {
-    pub fn construct<F: FieldExt>(meta: &mut ConstraintSystem<F>) -> Self {
-        Self {
-            id: meta.advice_column(),
-        }
-    }
-
-    pub fn columns(&self) -> Vec<Column<Any>> {
-        vec![self.id.into()]
-    }
-
-    pub fn annotations(&self) -> Vec<String> {
-        vec![String::from("id")]
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Ripemd160Config<F> {
-    table: Ripemd160Table,
-    _marker: PhantomData<F>,
-}
-
-impl<F: FieldExt> Ripemd160Config<F> {
-    pub fn configure(meta: &mut ConstraintSystem<F>, table: Ripemd160Table) -> Self {
-        Self {
-            table,
-            _marker: PhantomData,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Ripemd160Witness<F> {
-    pub inputs: Vec<Vec<u8>>,
-    pub _marker: PhantomData<F>,
-}
-
-#[derive(Clone, Debug)]
-pub struct Ripemd160Chip<F> {
-    config: Ripemd160Config<F>,
-    data: Ripemd160Witness<F>,
-}
-
-impl<F: FieldExt> Ripemd160Chip<F> {
-    pub fn construct(config: Ripemd160Config<F>, data: Ripemd160Witness<F>) -> Self {
-        Self { config, data }
-    }
-
-    pub fn load(&self, layouter: &mut impl Layouter<F>) -> Result<(), Error> {
-        Ok(())
-    }
-}
 
 mod constants;
 mod ref_impl;
@@ -157,6 +99,15 @@ impl<F: FieldExt, Ripemd160Chip: RIPEMD160Instructions<F>> RIPEMD160<F, Ripemd16
 
 #[cfg(any(feature = "test", test))]
 pub mod dev {
+    use crate::{
+        constants::BLOCK_SIZE_BYTES,
+        ref_impl::pad_message_bytes,
+        table16::{
+            util::{convert_byte_slice_to_blockword_slice, convert_byte_slice_to_u32_slice},
+            BlockWord, Table16Chip, Table16Config,
+        },
+    };
+
     use super::*;
 
     use ethers_core::types::H160;
@@ -196,7 +147,7 @@ pub mod dev {
     }
 
     impl<F: FieldExt> Circuit<F> for Ripemd160TestCircuit<F> {
-        type Config = Ripemd160Config<F>;
+        type Config = Table16Config<F>;
         type FloorPlanner = SimpleFloorPlanner;
 
         fn without_witnesses(&self) -> Self {
@@ -204,8 +155,7 @@ pub mod dev {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let ripemd160_table = Ripemd160Table::construct(meta);
-            Ripemd160Config::configure(meta, ripemd160_table)
+            Table16Chip::configure(meta)
         }
 
         fn synthesize(
@@ -213,14 +163,29 @@ pub mod dev {
             config: Self::Config,
             mut layouter: impl Layouter<F>,
         ) -> Result<(), Error> {
-            let chip = Ripemd160Chip::construct(
-                config,
-                Ripemd160Witness {
-                    inputs: self.inputs.clone(),
-                    _marker: PhantomData,
-                },
-            );
-            chip.load(&mut layouter)
+            let chip = Table16Chip::construct(config.clone());
+            Table16Chip::load(config, &mut layouter)?;
+
+            for (input, output) in self.inputs.iter().zip(self.outputs.iter()) {
+                // Preprocessing data
+                let data: Vec<[BlockWord; BLOCK_SIZE]> = pad_message_bytes(input.clone())
+                    .into_iter()
+                    .map(convert_byte_slice_to_blockword_slice::<BLOCK_SIZE_BYTES, BLOCK_SIZE>)
+                    .collect();
+
+                // Hash the data
+                let digest =
+                    RIPEMD160::digest(chip.clone(), layouter.namespace(|| "digest"), &data)?;
+
+                // Assert check
+                let expected: [u32; DIGEST_SIZE] =
+                    convert_byte_slice_to_u32_slice(output.0.clone());
+                for (i, digest) in digest.0.iter().enumerate() {
+                    digest.0.assert_if_known(|v| *v == expected[i]);
+                }
+            }
+
+            Ok(())
         }
     }
 }
@@ -242,7 +207,7 @@ mod tests {
             _marker: PhantomData,
         };
 
-        let k = 8;
+        let k = 17;
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         assert_eq!(prover.verify(), Ok(()));
     }

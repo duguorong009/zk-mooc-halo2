@@ -180,6 +180,9 @@ impl<F: FieldExt> CompressionConfig<F> {
         let a_5 = advice[2];
 
         // s_decompose_word for all words
+        // s_decompose_word  | a_0 |   a_1    |    a_2    |    a_3    |    a_4    |    a_5    |
+        //         1         |     |          |           | lo        | hi        |  word     |
+        //
         meta.create_gate("s_decompose_word", |meta| {
             let s_decompose_word = meta.query_selector(s_decompose_word);
             let lo = meta.query_advice(a_3, Rotation::cur());
@@ -190,6 +193,12 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // s_f1 on b, c, d words
+        // s_f1   | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5           |
+        //   1    |     |          | spread_r_0_even | spread_X_lo  | spread_Y_lo | spread_Z_lo      |
+        //        |     |          | spread_r_0_odd  | spread_X_hi  | spread_Y_hi | spread_Z_hi      |
+        //        |     |          | spread_r_1_even |              |             |                  |
+        //        |     |          | spread_r_1_odd  |              |             |                  |
+        //
         meta.create_gate("s_f1", |meta| {
             let s_f1 = meta.query_selector(s_f1);
             let spread_r0_even = meta.query_advice(a_2, Rotation(0));
@@ -287,6 +296,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         // s_f3 on b, c, d words
         // The f5 gate is the same as the f3 gate with arguments (C, D, B) instead of (B, C, D)
         // (b | !c) ^ d
+        // s_f3f5 | a_0 |   a_1    |       a_2         |    a_3           |    a_4      |    a_5           |
+        //   1    |     |          | spread_sum_0_even | spread_c_neg_lo  | spread_b_lo | spread_c_lo      |
+        //        |     |          | spread_sum_0_odd  | spread_c_neg_hi  | spread_b_hi | spread_c_hi      |
+        //        |     |          | spread_sum_1_even |                  |             |                  |
+        //        |     |          | spread_sum_1_odd  |                  |             |                  |
+        //        |     |          | spread_or_lo      | spread_d_lo      |             |                  |
+        //        |     |          | spread_or_hi      | spread_d_hi      |             |                  |
+        //        |     |          | spread_r_0_even   |                  |             |                  |
+        //        |     |          | spread_r_0_odd    |                  |             |                  |
+        //        |     |          | spread_r_1_even   |                  |             |                  |
+        //        |     |          | spread_r_1_odd    |                  |             |                  |
+        //
         meta.create_gate("s_f3f5", |meta| {
             let s_f3f5 = meta.query_selector(s_f3f5);
             let spread_sum0_even = meta.query_advice(a_2, Rotation(0));
@@ -331,6 +352,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_5 on a, b, c words
+        // s_rol5 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
+        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("rotate_left_5", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[0]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
@@ -357,6 +383,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_6 on a, b, c words
+        // s_rol6 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
+        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("rotate_left_6", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[1]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
@@ -383,6 +414,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_7 on a, b, c words
+        // s_rol7 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
+        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("rotate_left_7", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[2]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
@@ -409,6 +445,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_8 on a, b, c words
+        // s_rol8 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
+        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("rotate_left_8", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[3]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
@@ -435,6 +476,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_9 on a, b, c words
+        // s_rol9 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
+        //        |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_9", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[4]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -461,6 +507,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_10 on a, b, c words
+        // s_rol10 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1     |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
+        //         |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_10", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[5]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -487,6 +538,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_11 on a, b, c words
+        // s_rol11 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1     |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
+        //         |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_11", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[6]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -513,6 +569,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_12 on a, b, c words
+        // s_rol12 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1     |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
+        //         |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_12", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[7]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -539,6 +600,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_13 on a, b, c words
+        // s_rol13 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1     |  1  |  a       |        | b          | word_lo     | rol_word_lo      |
+        //         |     |  c       |        |            | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_13", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[8]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -563,6 +629,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_14 on a, b, c words
+        // s_rol14 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1     |  1  |  a       |        | b          | word_lo     | rol_word_lo      |
+        //         |     |  c       |        |            | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_14", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[9]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -587,6 +658,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // rotate_left_15 on a, b, c words
+        // s_rol15 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
+        //   1     |  1  |  a       |        | b          | word_lo     | rol_word_lo      |
+        //         |     |  c       |        |            | word_hi     | rol_word_hi      |
+        //
         meta.create_gate("s_rotate_left_15", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[10]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
@@ -611,6 +687,12 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // s_sum_afxk
+        // s_sum_afxk | a_0 |   a_1    |  a_2  |    a_3   |    a_4   |    a_5    |
+        //   1        |     | sum_lo   |       | a_lo     | f_lo     | x_lo      |
+        //            |     | sum_hi   |       | a_hi     | f_hi     | x_hi      |
+        //            |     |          |       | k_lo     | k_hi     | carry     |
+        //
         meta.create_gate("s_sum_afxk", |meta| {
             let s_sum_afxk = meta.query_selector(s_sum_afxk);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());
@@ -631,6 +713,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // s_sum_re
+        // s_sum_re | a_0 |   a_1    |  a_2  |    a_3   |    a_4   |    a_5   |
+        //   1      |     | sum_lo   |       | rol_lo   | e_lo     | carry    |
+        //          |     | sum_hi   |       | rol_hi   | e_hi     |          |
+        //
         meta.create_gate("s_sum_re", |meta| {
             let s_sum_re = meta.query_selector(s_sum_re);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());
@@ -646,6 +733,12 @@ impl<F: FieldExt> CompressionConfig<F> {
             )
         });
 
+        // s_sum_combine_ilr
+        // s_sum_combine_ilr | a_0 |   a_1    |  a_2  |       a_3     |       a_4      |       a_5      |
+        //   1               |     | sum_lo   |       | init_state_lo | left_state_lo  | right_state_lo |
+        //                   |     | sum_hi   |       | init_state_hi | left_state_hi  | right_state_hi |
+        //                   |     |          |       |               |                | carry          |
+        //
         meta.create_gate("s_sum_combine_ilr", |meta| {
             let s_sum_ilr = meta.query_selector(s_sum_combine_ilr);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());

@@ -906,10 +906,10 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         self.s_decompose_word.enable(region, row)?;
 
-        AssignedBits::<32, F>::assign(region, || "word(u32)", a_5, row, word)?;
+        AssignedBits::<32, F>::assign(region, || "word(u32)", a_3, row + 2, word)?;
 
         word_lo.copy_advice(|| "word_lo", region, a_3, row)?;
-        word_hi.copy_advice(|| "word_hi", region, a_4, row)?;
+        word_hi.copy_advice(|| "word_hi", region, a_3, row + 1)?;
 
         Ok(())
     }
@@ -926,10 +926,10 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         self.s_decompose_word.enable(region, row)?;
 
-        AssignedBits::<32, F>::assign(region, || "word(u32)", a_5, row, word.value())?;
+        AssignedBits::<32, F>::assign(region, || "word(u32)", a_3, row + 2, word.value())?;
 
         word.0.copy_advice(|| "word_lo", region, a_3, row)?;
-        word.1.copy_advice(|| "word_hi", region, a_4, row)?;
+        word.1.copy_advice(|| "word_hi", region, a_3, row + 1)?;
 
         Ok(())
     }

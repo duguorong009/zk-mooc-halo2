@@ -181,23 +181,25 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         // s_decompose_word for all words
         // s_decompose_word  | a_0 |   a_1    |    a_2    |    a_3    |    a_4    |    a_5    |
-        //         1         |     |          |           | lo        | hi        |  word     |
+        //         1         |     |          |           | lo        |           |           |
+        //                   |     |          |           | hi        |           |           |
+        //                   |     |          |           | word      |           |           |
         //
         meta.create_gate("s_decompose_word", |meta| {
             let s_decompose_word = meta.query_selector(s_decompose_word);
-            let lo = meta.query_advice(a_3, Rotation::cur());
-            let hi = meta.query_advice(a_4, Rotation::cur());
-            let word = meta.query_advice(a_5, Rotation::cur());
+            let lo = meta.query_advice(a_3, Rotation(0));
+            let hi = meta.query_advice(a_3, Rotation(1));
+            let word = meta.query_advice(a_3, Rotation(2));
 
             Gate::s_decompose_word(s_decompose_word, lo, hi, word)
         });
 
         // s_f1 on b, c, d words
-        // s_f1   | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5           |
-        //   1    |     |          | spread_r_0_even | spread_X_lo  | spread_Y_lo | spread_Z_lo      |
-        //        |     |          | spread_r_0_odd  | spread_X_hi  | spread_Y_hi | spread_Z_hi      |
-        //        |     |          | spread_r_1_even |              |             |                  |
-        //        |     |          | spread_r_1_odd  |              |             |                  |
+        // s_f1   | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5       |
+        //   1    |     |          | spread_r_0_even | spread_X_lo  | spread_Y_lo | spread_Z_lo  |
+        //        |     |          | spread_r_0_odd  | spread_X_hi  | spread_Y_hi | spread_Z_hi  |
+        //        |     |          | spread_r_1_even |              |             |              |
+        //        |     |          | spread_r_1_odd  |              |             |              |
         //
         meta.create_gate("s_f1", |meta| {
             let s_f1 = meta.query_selector(s_f1);
@@ -948,19 +950,19 @@ mod tests {
                         AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected_a_hi",
-                            a_4,
-                            row,
+                            a_3,
+                            row + 1,
                             a.1.value_u16(),
                         )?;
                         AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual a",
-                            a_5,
-                            row,
-                            Value::known(output[row]),
+                            a_3,
+                            row + 2,
+                            Value::known(output[(row / 3) as usize]),
                         )?;
 
-                        row += 1;
+                        row += 3;
                         config
                             .compression
                             .s_decompose_word
@@ -975,19 +977,19 @@ mod tests {
                         AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected_b_hi",
-                            a_4,
-                            row,
+                            a_3,
+                            row + 1,
                             b.dense_halves.1.value_u16(),
                         )?;
                         AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual b",
-                            a_5,
-                            row,
-                            Value::known(output[row]),
+                            a_3,
+                            row + 2,
+                            Value::known(output[(row / 3) as usize]),
                         )?;
 
-                        row += 1;
+                        row += 3;
                         config
                             .compression
                             .s_decompose_word
@@ -1002,19 +1004,19 @@ mod tests {
                         AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected c_hi",
-                            a_4,
-                            row,
+                            a_3,
+                            row + 1,
                             c.dense_halves.1.value_u16(),
                         )?;
                         AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual c",
-                            a_5,
-                            row,
-                            Value::known(output[row]),
+                            a_3,
+                            row + 2,
+                            Value::known(output[(row / 3) as usize]),
                         )?;
 
-                        row += 1;
+                        row += 3;
                         config
                             .compression
                             .s_decompose_word
@@ -1029,19 +1031,19 @@ mod tests {
                         AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected d_hi",
-                            a_4,
-                            row,
+                            a_3,
+                            row + 1,
                             d.dense_halves.1.value_u16(),
                         )?;
                         AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual d",
-                            a_5,
-                            row,
-                            Value::known(output[row]),
+                            a_3,
+                            row + 2,
+                            Value::known(output[(row / 3) as usize]),
                         )?;
 
-                        row += 1;
+                        row += 3;
                         AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected e_lo",
@@ -1052,16 +1054,16 @@ mod tests {
                         AssignedBits::<16, F>::assign(
                             &mut region,
                             || "expected e_hi",
-                            a_4,
-                            row,
+                            a_3,
+                            row + 1,
                             e.1.value_u16(),
                         )?;
                         AssignedBits::<32, F>::assign(
                             &mut region,
                             || "actual e",
-                            a_5,
-                            row,
-                            Value::known(output[row]),
+                            a_3,
+                            row + 2,
+                            Value::known(output[(row / 3) as usize]),
                         )?;
 
                         Ok(())

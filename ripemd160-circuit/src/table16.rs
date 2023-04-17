@@ -2,8 +2,6 @@
 Based on code from https://github.com/privacy-scaling-explorations/halo2/blob/8c945507ceca5f4ed6e52da3672ea0308bcac812/halo2_gadgets/src/sha256/table16.rs
 */
 
-use std::marker::PhantomData;
-
 use halo2_proofs::{
     circuit::{AssignedCell, Chip, Layouter, Region, Value},
     halo2curves::FieldExt,
@@ -368,9 +366,9 @@ trait Table16Assignment<F: FieldExt> {
         let spread_w_hi = SpreadVar::with_lookup(region, &lookup, row + 1, spread_w_hi)?;
         spread_w_hi
             .dense
-            .copy_advice(&annotation, region, a_4, row)?;
+            .copy_advice(&annotation, region, a_3, row + 1)?;
 
-        let w = AssignedBits::<32, F>::assign(region, annotation, a_5, row, word)?;
+        let w = AssignedBits::<32, F>::assign(region, annotation, a_3, row + 2, word)?;
 
         Ok((w, (spread_w_lo, spread_w_hi)))
     }

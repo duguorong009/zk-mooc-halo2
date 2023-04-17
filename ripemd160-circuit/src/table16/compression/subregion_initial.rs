@@ -33,7 +33,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         )?;
         let a = RoundWordDense(a_lo.dense, a_hi.dense);
 
-        row += 2;
+        row += 3;
         self.s_decompose_word.enable(region, row)?;
         let (_, (b_lo, b_hi)) = self.assign_word_and_halves(
             || "assign iv[1]",
@@ -50,7 +50,7 @@ impl<F: FieldExt> CompressionConfig<F> {
             spread_halves: RoundWordSpread(b_lo.spread, b_hi.spread),
         };
 
-        row += 2;
+        row += 3;
         self.s_decompose_word.enable(region, row)?;
         let (_, (c_lo, c_hi)) = self.assign_word_and_halves(
             || "assign iv[2]",
@@ -67,7 +67,7 @@ impl<F: FieldExt> CompressionConfig<F> {
             spread_halves: RoundWordSpread(c_lo.spread, c_hi.spread),
         };
 
-        row += 2;
+        row += 3;
         self.s_decompose_word.enable(region, row)?;
         let (_, (d_lo, d_hi)) = self.assign_word_and_halves(
             || "assign iv[3]",
@@ -84,7 +84,7 @@ impl<F: FieldExt> CompressionConfig<F> {
             spread_halves: RoundWordSpread(d_lo.spread, d_hi.spread),
         };
 
-        row += 2;
+        row += 3;
         self.s_decompose_word.enable(region, row)?;
         let (_, (e_lo, e_hi)) = self.assign_word_and_halves(
             || "assign iv[4]",

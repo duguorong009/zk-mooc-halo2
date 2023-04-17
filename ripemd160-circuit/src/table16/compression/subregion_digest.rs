@@ -16,13 +16,13 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         let mut row: usize = 0;
         self.assign_decompose_word_dense(region, row, a.clone())?;
-        row += 1;
+        row += 3;
         self.assign_decompose_word_dense(region, row, b.clone().dense_halves)?;
-        row += 1;
+        row += 3;
         self.assign_decompose_word_dense(region, row, c.clone().dense_halves)?;
-        row += 1;
+        row += 3;
         self.assign_decompose_word_dense(region, row, d.clone().dense_halves)?;
-        row += 1;
+        row += 3;
         self.assign_decompose_word_dense(region, row, e.clone())?;
 
         Ok([

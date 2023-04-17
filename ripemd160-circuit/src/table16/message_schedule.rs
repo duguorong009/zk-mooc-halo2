@@ -61,9 +61,9 @@ impl<F: FieldExt> MessageScheduleConfig<F> {
         // s_decompose_word for all words
         meta.create_gate("s_decompose_word", |meta| {
             let s_decompose_word = meta.query_selector(s_decompose_word);
-            let lo = meta.query_advice(a_3, Rotation::cur());
-            let hi = meta.query_advice(a_4, Rotation::cur());
-            let word = meta.query_advice(a_5, Rotation::cur());
+            let lo = meta.query_advice(a_3, Rotation(0));
+            let hi = meta.query_advice(a_3, Rotation(1));
+            let word = meta.query_advice(a_3, Rotation(2));
 
             Gate::s_decompose_word(s_decompose_word, lo, hi, word)
         });
@@ -99,9 +99,9 @@ impl<F: FieldExt> MessageScheduleConfig<F> {
                     Vec::<(AssignedBits<16, F>, AssignedBits<16, F>)>::with_capacity(BLOCK_SIZE);
 
                 // Assign X[0..16]
-                for (row, word) in input.iter().enumerate() {
+                for (word_idx, word) in input.iter().enumerate() {
                     let (word, halves) =
-                        self.assign_msgblk_word_and_halves(&mut region, word.0, row)?;
+                        self.assign_msgblk_word_and_halves(&mut region, word.0, word_idx)?;
                     w.push(MessageWord(word));
                     w_halves.push(halves);
                 }

@@ -47,7 +47,7 @@ impl<F: FieldExt> CompressionConfig<F> {
                 c.spread_halves,
                 d.spread_halves,
             )?;
-            *row += 8; // f2 requires 8 rows
+            *row += 11; // f2 requires 11 rows
             f2_out
         } else if phase_idx == 3 {
             // f3(B, C, D)
@@ -70,7 +70,7 @@ impl<F: FieldExt> CompressionConfig<F> {
                 c.spread_halves,
                 d.spread_halves,
             )?;
-            *row += 8; // f4 requires 8 rows
+            *row += 11; // f4 requires 11 rows
             f4_out
         } else {
             // f5(B, C, D)

@@ -233,15 +233,18 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         // s_f2 on b, c, d words
         // The f4 gate is the same as the f2 gate with arguments (D, B, C) instead of (B, C, D)
-        // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5           |
-        //   1    |     | P_0_even | spread_P_0_even | spread_X_lo  | spread_Y_lo |                  |
-        //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi  | spread_Y_hi |                  |
-        //        |     | P_1_even | spread_P_1_even |              |             |                  |
-        //        |     | P_1_odd  | spread_P_1_odd  |              |             |                  |
-        //        |     | Q_0_even | spread_Q_0_even |              | spread_Z_lo | spread_neg_X_lo  |
-        //        |     | Q_0_odd  | spread_Q_0_odd  |              | spread_Z_hi | spread_neg_X_hi  |
-        //        |     | Q_1_even | spread_Q_1_even | sum_lo       | carry       |                  |
-        //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi       |             |                  |
+        // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |    a_4      |    a_5           |
+        //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |             |                  |
+        //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |             |                  |
+        //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |             |                  |
+        //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |             |                  |
+        //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |             |                  |
+        //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |             |                  |
+        //        |     | Q_1_even | spread_Q_1_even | sum_lo          |             |                  |
+        //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |             |                  |
+        //        |     |          |                 | carry           |             |                  |
+        //        |     |          |                 | spread_neg_X_lo |             |                  |
+        //        |     |          |                 | spread_neg_X_hi |             |                  |
         //
         meta.create_gate("s_f2f4", |meta| {
             let s_f2f4 = meta.query_selector(s_f2f4);
@@ -257,17 +260,17 @@ impl<F: FieldExt> CompressionConfig<F> {
             let spread_q1_even = meta.query_advice(a_2, Rotation(6));
             let spread_q1_odd = meta.query_advice(a_2, Rotation(7));
             let q1_odd = meta.query_advice(a_1, Rotation(7));
-            let spread_b_lo = meta.query_advice(a_3, Rotation::cur());
-            let spread_b_hi = meta.query_advice(a_3, Rotation::next());
-            let spread_c_lo = meta.query_advice(a_4, Rotation::cur());
-            let spread_c_hi = meta.query_advice(a_4, Rotation::next());
-            let spread_d_lo = meta.query_advice(a_4, Rotation(4));
-            let spread_d_hi = meta.query_advice(a_4, Rotation(5));
-            let spread_b_neg_lo = meta.query_advice(a_5, Rotation(4));
-            let spread_b_neg_hi = meta.query_advice(a_5, Rotation(5));
+            let spread_b_lo = meta.query_advice(a_3, Rotation(0));
+            let spread_b_hi = meta.query_advice(a_3, Rotation(1));
+            let spread_c_lo = meta.query_advice(a_3, Rotation(2));
+            let spread_c_hi = meta.query_advice(a_3, Rotation(3));
+            let spread_d_lo = meta.query_advice(a_3, Rotation(4));
+            let spread_d_hi = meta.query_advice(a_3, Rotation(5));
+            let spread_b_neg_lo = meta.query_advice(a_3, Rotation(9));
+            let spread_b_neg_hi = meta.query_advice(a_3, Rotation(10));
             let sum_lo = meta.query_advice(a_3, Rotation(6));
             let sum_hi = meta.query_advice(a_3, Rotation(7));
-            let carry = meta.query_advice(a_4, Rotation(6));
+            let carry = meta.query_advice(a_3, Rotation(8));
 
             CompressionGate::f2_gate(
                 s_f2f4,

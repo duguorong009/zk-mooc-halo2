@@ -98,15 +98,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok(even)
     }
 
-    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5           |
-    //   1    |     | P_0_even | spread_P_0_even | spread_X_lo  | spread_Y_lo |                  |
-    //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi  | spread_Y_hi |                  |
-    //        |     | P_1_even | spread_P_1_even |              |             |                  |
-    //        |     | P_1_odd  | spread_P_1_odd  |              |             |                  |
-    //        |     | Q_0_even | spread_Q_0_even |              | spread_Z_lo | spread_neg_X_lo  |
-    //        |     | Q_0_odd  | spread_Q_0_odd  |              | spread_Z_hi | spread_neg_X_hi  |
-    //        |     | Q_1_even | spread_Q_1_even | sum_lo       | carry       |                  |
-    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi       |             |                  |
+    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |    a_4      |    a_5           |
+    //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |             |                  |
+    //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |             |                  |
+    //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |             |                  |
+    //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |             |                  |
+    //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |             |                  |
+    //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |             |                  |
+    //        |     | Q_1_even | spread_Q_1_even | sum_lo          |             |                  |
+    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |             |                  |
+    //        |     |          |                 | carry           |             |                  |
+    //        |     |          |                 | spread_neg_X_lo |             |                  |
+    //        |     |          |                 | spread_neg_X_hi |             |                  |
     //
     // Output is sum_lo, sum_hi
     pub(super) fn assign_f2(
@@ -135,10 +138,10 @@ impl<F: FieldExt> CompressionConfig<F> {
         // Assign and copy spread_y_lo, spread_y_hi
         spread_halves_y
             .0
-            .copy_advice(|| "spread_y_lo", region, a_4, row)?;
+            .copy_advice(|| "spread_y_lo", region, a_3, row + 2)?;
         spread_halves_y
             .1
-            .copy_advice(|| "spread_y_hi", region, a_4, row + 1)?;
+            .copy_advice(|| "spread_y_hi", region, a_3, row + 3)?;
 
         let p: Value<[bool; 64]> = spread_halves_x
             .value()
@@ -160,10 +163,10 @@ impl<F: FieldExt> CompressionConfig<F> {
         // Assign and copy spread_z_lo, spread_z_hi
         spread_halves_z
             .0
-            .copy_advice(|| "spread_z_lo", region, a_4, row + 4)?;
+            .copy_advice(|| "spread_z_lo", region, a_3, row + 4)?;
         spread_halves_z
             .1
-            .copy_advice(|| "spread_z_hi", region, a_4, row + 5)?;
+            .copy_advice(|| "spread_z_hi", region, a_3, row + 5)?;
 
         // Calculate neg_x_lo
         let spread_neg_x_lo = spread_halves_x
@@ -174,8 +177,8 @@ impl<F: FieldExt> CompressionConfig<F> {
         AssignedBits::<32, F>::assign_bits(
             region,
             || "spread_neg_x_lo",
-            a_5,
-            row + 4,
+            a_3,
+            row + 9,
             spread_neg_x_lo,
         )?;
 
@@ -188,8 +191,8 @@ impl<F: FieldExt> CompressionConfig<F> {
         AssignedBits::<32, F>::assign_bits(
             region,
             || "spread_neg_x_hi",
-            a_5,
-            row + 5,
+            a_3,
+            row + 10,
             spread_neg_x_hi,
         )?;
 
@@ -226,8 +229,8 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         region.assign_advice(
             || "f2f4_carry",
-            a_4,
-            row + 6,
+            a_3,
+            row + 8,
             || carry.map(|value| F::from(value as u64)),
         )?;
 

@@ -624,10 +624,16 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok(RoundWordDense(rol_word_lo, rol_word_hi))
     }
 
-    // s_sum1 | a_0 |   a_1  |       a_2     | a_3  | a_4  | a_5   |
-    //   1    |     | sum_lo | spread_sum_lo | a_lo | f_lo | x_lo  |
-    //        |     | sum_hi | spread_sum_hi | a_hi | f_hi | x_hi  |
-    //        |     |        |               | k_lo | k_hi | carry |
+    // s_sum1 | a_0 |   a_1  |       a_2     | a_3   | a_4  | a_5   |
+    //   1    |     | sum_lo | spread_sum_lo | a_lo  |      |       |
+    //        |     | sum_hi | spread_sum_hi | a_hi  |      |       |
+    //        |     |        |               | f_lo  |      |       |
+    //        |     |        |               | f_hi  |      |       |
+    //        |     |        |               | x_lo  |      |       |
+    //        |     |        |               | x_hi  |      |       |
+    //        |     |        |               | k_lo  |      |       |
+    //        |     |        |               | k_hi  |      |       |
+    //        |     |        |               | carry |      |       |
     //
     pub(super) fn assign_sum_afxk(
         &self,
@@ -647,19 +653,19 @@ impl<F: FieldExt> CompressionConfig<F> {
         a.1.copy_advice(|| "a_hi", region, a_3, row + 1)?;
 
         // Assign and copy f_lo, f_hi
-        f.0.copy_advice(|| "f_lo", region, a_4, row)?;
-        f.1.copy_advice(|| "f_hi", region, a_4, row + 1)?;
+        f.0.copy_advice(|| "f_lo", region, a_3, row + 2)?;
+        f.1.copy_advice(|| "f_hi", region, a_3, row + 3)?;
 
         // Assign and copy x_lo, x_hi
-        x.0.copy_advice(|| "x_lo", region, a_5, row)?;
-        x.1.copy_advice(|| "x_hi", region, a_5, row + 1)?;
+        x.0.copy_advice(|| "x_lo", region, a_3, row + 4)?;
+        x.1.copy_advice(|| "x_hi", region, a_3, row + 5)?;
 
         // Assign k
         let k: [bool; 32] = i2lebsp(k.into());
         let k_lo: [bool; 16] = k[..16].try_into().unwrap();
         let k_hi: [bool; 16] = k[16..].try_into().unwrap();
-        AssignedBits::<16, F>::assign_bits(region, || "k_lo", a_3, row + 2, Value::known(k_lo))?;
-        AssignedBits::<16, F>::assign_bits(region, || "k_hi", a_4, row + 2, Value::known(k_hi))?;
+        AssignedBits::<16, F>::assign_bits(region, || "k_lo", a_3, row + 6, Value::known(k_lo))?;
+        AssignedBits::<16, F>::assign_bits(region, || "k_hi", a_3, row + 7, Value::known(k_hi))?;
 
         let (sum, carry) = sum_with_carry(vec![
             (a.0.value_u16(), a.1.value_u16()),
@@ -673,8 +679,8 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         region.assign_advice(
             || "sum_afxk_carry",
-            a_5,
-            row + 2,
+            a_3,
+            row + 8,
             || carry.map(|value| F::from(value as u64)),
         )?;
 

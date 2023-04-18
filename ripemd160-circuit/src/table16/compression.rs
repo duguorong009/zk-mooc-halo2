@@ -740,24 +740,31 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         // s_sum_afxk
         // s_sum_afxk | a_0 |   a_1    |  a_2  |    a_3   |    a_4   |    a_5    |
-        //   1        |     | sum_lo   |       | a_lo     | f_lo     | x_lo      |
-        //            |     | sum_hi   |       | a_hi     | f_hi     | x_hi      |
-        //            |     |          |       | k_lo     | k_hi     | carry     |
+        //   1        |     | sum_lo   |       | a_lo     |          |           |
+        //            |     | sum_hi   |       | a_hi     |          |           |
+        //            |     |          |       | f_lo     |          |           |
+        //            |     |          |       | f_hi     |          |           |
+        //            |     |          |       | x_lo     |          |           |
+        //            |     |          |       | x_hi     |          |           |
+        //            |     |          |       | k_lo     |          |           |
+        //            |     |          |       | k_hi     |          |           |
+        //            |     |          |       | carry    |          |           |
         //
         meta.create_gate("s_sum_afxk", |meta| {
             let s_sum_afxk = meta.query_selector(s_sum_afxk);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());
             let sum_hi = meta.query_advice(a_1, Rotation::next());
-            let a_lo = meta.query_advice(a_3, Rotation::cur());
-            let a_hi = meta.query_advice(a_3, Rotation::next());
-            let f_lo = meta.query_advice(a_4, Rotation::cur());
-            let f_hi = meta.query_advice(a_4, Rotation::next());
-            let x_lo = meta.query_advice(a_5, Rotation::cur());
-            let x_hi = meta.query_advice(a_5, Rotation::next());
 
-            let k_lo = meta.query_advice(a_3, Rotation(2));
-            let k_hi = meta.query_advice(a_4, Rotation(2));
-            let carry = meta.query_advice(a_5, Rotation(2));
+            let a_lo = meta.query_advice(a_3, Rotation(0));
+            let a_hi = meta.query_advice(a_3, Rotation(1));
+            let f_lo = meta.query_advice(a_3, Rotation(2));
+            let f_hi = meta.query_advice(a_3, Rotation(3));
+            let x_lo = meta.query_advice(a_3, Rotation(4));
+            let x_hi = meta.query_advice(a_3, Rotation(5));
+
+            let k_lo = meta.query_advice(a_3, Rotation(6));
+            let k_hi = meta.query_advice(a_3, Rotation(7));
+            let carry = meta.query_advice(a_3, Rotation(8));
 
             CompressionGate::sum_afxk_gate(
                 s_sum_afxk, sum_lo, sum_hi, carry, a_lo, a_hi, f_lo, f_hi, x_lo, x_hi, k_lo, k_hi,

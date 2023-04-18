@@ -109,7 +109,7 @@ impl<F: FieldExt> CompressionConfig<F> {
                 ROUND_CONSTANTS_RIGHT[phase_idx - 1]
             },
         )?;
-        *row += 3; // sum_afxk requires 3 rows
+        *row += 9; // sum_afxk requires 9 rows
 
         // rol = rol_s(j) ( A + f1(B, C, D) + X[r(idx)] + K(idx / 16) )
         let rol_shift = if round_side == Left {

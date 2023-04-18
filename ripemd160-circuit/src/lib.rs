@@ -210,5 +210,18 @@ mod tests {
         let k = 17;
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         assert_eq!(prover.verify(), Ok(()));
+
+        // Add circuit layout diagram
+        use plotters::prelude::*;
+
+        let root = BitMapBackend::new("ripemd160.png", (1024, 512)).into_drawing_area();
+        root.fill(&WHITE).unwrap();
+        let root = root
+            .titled("Ripemd160 hash Layout", ("sans-serif", 30))
+            .unwrap();
+
+        halo2_proofs::dev::CircuitLayout::default()
+            .render(k, &circuit, &root)
+            .unwrap();
     }
 }

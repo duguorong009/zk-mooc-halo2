@@ -159,14 +159,14 @@ impl<F: FieldExt> CompressionGate<F> {
     // Output is in R_0_even, R_1_even
     //
     // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |    a_4      |    a_5      |
-    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo | spread_X_lo | spread_Y_lo |
-    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi | spread_X_hi | spread_Y_hi |
-    //        |     | sum_1_even  | spread_sum_1_even |                 |             |             |
-    //        |     | sum_1_odd   | spread_sum_1_odd  |                 |             |             |
+    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo |             |             |
+    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi |             |             |
+    //        |     | sum_1_even  | spread_sum_1_even | spread_X_lo     |             |             |
+    //        |     | sum_1_odd   | spread_sum_1_odd  | spread_X_hi     |             |             |
     //        |     | or_lo       | spread_or_lo      | spread_Z_lo     |             |             |
     //        |     | or_hi       | spread_or_hi      | spread_Z_hi     |             |             |
-    //        |     | R_0_even    | spread_R_0_even   |                 |             |             |
-    //        |     | R_0_odd     | spread_R_0_odd    |                 |             |             |
+    //        |     | R_0_even    | spread_R_0_even   | spread_Y_lo     |             |             |
+    //        |     | R_0_odd     | spread_R_0_odd    | spread_Y_hi     |             |             |
     //        |     | R_1_even    | spread_R_1_even   |                 |             |             |
     //        |     | R_1_odd     | spread_R_1_odd    |                 |             |             |
     pub fn f3_gate(

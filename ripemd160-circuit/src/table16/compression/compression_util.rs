@@ -288,14 +288,14 @@ impl<F: FieldExt> CompressionConfig<F> {
     }
 
     // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |    a_4      |    a_5      |
-    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo | spread_X_lo | spread_Y_lo |
-    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi | spread_X_hi | spread_Y_hi |
-    //        |     | sum_1_even  | spread_sum_1_even |                 |             |             |
-    //        |     | sum_1_odd   | spread_sum_1_odd  |                 |             |             |
+    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo |             |             |
+    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi |             |             |
+    //        |     | sum_1_even  | spread_sum_1_even | spread_X_lo     |             |             |
+    //        |     | sum_1_odd   | spread_sum_1_odd  | spread_X_hi     |             |             |
     //        |     | or_lo       | spread_or_lo      | spread_Z_lo     |             |             |
     //        |     | or_hi       | spread_or_hi      | spread_Z_hi     |             |             |
-    //        |     | R_0_even    | spread_R_0_even   |                 |             |             |
-    //        |     | R_0_odd     | spread_R_0_odd    |                 |             |             |
+    //        |     | R_0_even    | spread_R_0_even   | spread_Y_lo     |             |             |
+    //        |     | R_0_odd     | spread_R_0_odd    | spread_Y_hi     |             |             |
     //        |     | R_1_even    | spread_R_1_even   |                 |             |             |
     //        |     | R_1_odd     | spread_R_1_odd    |                 |             |             |
     //
@@ -317,18 +317,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         // Assign and copy spread_x_lo, spread_x_hi
         spread_halves_x
             .0
-            .copy_advice(|| "spread_x_lo", region, a_4, row)?;
+            .copy_advice(|| "spread_x_lo", region, a_3, row + 2)?;
         spread_halves_x
             .1
-            .copy_advice(|| "spread_x_hi", region, a_4, row + 1)?;
+            .copy_advice(|| "spread_x_hi", region, a_3, row + 3)?;
 
         // Assign and copy spread_y_lo, spread_y_hi
         spread_halves_y
             .0
-            .copy_advice(|| "spread_y_lo", region, a_5, row)?;
+            .copy_advice(|| "spread_y_lo", region, a_3, row + 6)?;
         spread_halves_y
             .1
-            .copy_advice(|| "spread_y_hi", region, a_5, row + 1)?;
+            .copy_advice(|| "spread_y_hi", region, a_3, row + 7)?;
 
         // Assign and copy spread_z_lo, spread_z_hi
         spread_halves_z

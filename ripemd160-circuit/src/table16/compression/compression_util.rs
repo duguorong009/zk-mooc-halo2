@@ -13,13 +13,13 @@ use crate::table16::AssignedBits;
 use super::{CompressionConfig, RoundWord, RoundWordDense, RoundWordSpread, State, StateWord};
 
 impl<F: FieldExt> CompressionConfig<F> {
-    // s_f1 | a_0 |   a_1    |       a_2       |    a_3      |    a_4      |    a_5      |
-    //   1  |     | R_0_even | spread_R_0_even | spread_B_lo |             |             |
-    //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi |             |             |
-    //      |     | R_1_even | spread_R_1_even | spread_C_lo |             |             |
-    //      |     | R_1_odd  | spread_R_1_odd  | spread_C_hi |             |             |
-    //      |     |          |                 | spread_D_lo |             |             |
-    //      |     |          |                 | spread_D_hi |             |             |
+    // s_f1 | a_0 |   a_1    |       a_2       |    a_3      |
+    //   1  |     | R_0_even | spread_R_0_even | spread_B_lo |
+    //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi |
+    //      |     | R_1_even | spread_R_1_even | spread_C_lo |
+    //      |     | R_1_odd  | spread_R_1_odd  | spread_C_hi |
+    //      |     |          |                 | spread_D_lo |
+    //      |     |          |                 | spread_D_hi |
     //
     pub(super) fn assign_f1(
         &self,
@@ -29,9 +29,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         spread_halves_c: RoundWordSpread<F>,
         spread_halves_d: RoundWordSpread<F>,
     ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         self.s_f1.enable(region, row)?;
 
@@ -98,18 +96,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok(even)
     }
 
-    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |    a_4      |    a_5           |
-    //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |             |                  |
-    //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |             |                  |
-    //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |             |                  |
-    //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |             |                  |
-    //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |             |                  |
-    //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |             |                  |
-    //        |     | Q_1_even | spread_Q_1_even | sum_lo          |             |                  |
-    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |             |                  |
-    //        |     |          |                 | carry           |             |                  |
-    //        |     |          |                 | spread_neg_X_lo |             |                  |
-    //        |     |          |                 | spread_neg_X_hi |             |                  |
+    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |
+    //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |
+    //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |
+    //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |
+    //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |
+    //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |
+    //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |
+    //        |     | Q_1_even | spread_Q_1_even | sum_lo          |
+    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |
+    //        |     |          |                 | carry           |
+    //        |     |          |                 | spread_neg_X_lo |
+    //        |     |          |                 | spread_neg_X_hi |
     //
     // Output is sum_lo, sum_hi
     pub(super) fn assign_f2(
@@ -120,9 +118,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         spread_halves_y: RoundWordSpread<F>,
         spread_halves_z: RoundWordSpread<F>,
     ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         self.s_f2f4.enable(region, row)?;
 
@@ -237,15 +233,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok((sum_lo, sum_hi))
     }
 
-    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5           |
-    //   1    |     | P_0_even | spread_P_0_even | spread_Z_lo  | spread_X_lo |                  |
-    //        |     | P_0_odd  | spread_P_0_odd  | spread_Z_hi  | spread_X_hi |                  |
-    //        |     | P_1_even | spread_P_1_even |              |             |                  |
-    //        |     | P_1_odd  | spread_P_1_odd  |              |             |                  |
-    //        |     | Q_0_even | spread_Q_0_even |              | spread_Y_lo | spread_neg_Z_lo  |
-    //        |     | Q_0_odd  | spread_Q_0_odd  |              | spread_Y_hi | spread_neg_Z_hi  |
-    //        |     | Q_1_even | spread_Q_1_even | sum_lo       | carry       |                  |
-    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi       |             |                  |
+    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3           |
+    //   1    |     | P_0_even | spread_P_0_even | spread_Z_lo      |
+    //        |     | P_0_odd  | spread_P_0_odd  | spread_Z_hi      |
+    //        |     | P_1_even | spread_P_1_even | spread_X_lo      |
+    //        |     | P_1_odd  | spread_P_1_odd  | spread_X_hi      |
+    //        |     | Q_0_even | spread_Q_0_even | spread_Y_lo      |
+    //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Y_hi      |
+    //        |     | Q_1_even | spread_Q_1_even | sum_lo           |
+    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi           |
+    //        |     |          |                 | carry            |
+    //        |     |          |                 | spread_neg_Z_lo  |
+    //        |     |          |                 | spread_neg_Z_hi  |
     //
     // Output is sum_lo, sum_hi
     pub(super) fn assign_f4(
@@ -287,17 +286,17 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok(odd)
     }
 
-    // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |    a_4      |    a_5      |
-    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo |             |             |
-    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi |             |             |
-    //        |     | sum_1_even  | spread_sum_1_even | spread_X_lo     |             |             |
-    //        |     | sum_1_odd   | spread_sum_1_odd  | spread_X_hi     |             |             |
-    //        |     | or_lo       | spread_or_lo      | spread_Z_lo     |             |             |
-    //        |     | or_hi       | spread_or_hi      | spread_Z_hi     |             |             |
-    //        |     | R_0_even    | spread_R_0_even   | spread_Y_lo     |             |             |
-    //        |     | R_0_odd     | spread_R_0_odd    | spread_Y_hi     |             |             |
-    //        |     | R_1_even    | spread_R_1_even   |                 |             |             |
-    //        |     | R_1_odd     | spread_R_1_odd    |                 |             |             |
+    // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |
+    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo |
+    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi |
+    //        |     | sum_1_even  | spread_sum_1_even | spread_X_lo     |
+    //        |     | sum_1_odd   | spread_sum_1_odd  | spread_X_hi     |
+    //        |     | or_lo       | spread_or_lo      | spread_Z_lo     |
+    //        |     | or_hi       | spread_or_hi      | spread_Z_hi     |
+    //        |     | R_0_even    | spread_R_0_even   | spread_Y_lo     |
+    //        |     | R_0_odd     | spread_R_0_odd    | spread_Y_hi     |
+    //        |     | R_1_even    | spread_R_1_even   |                 |
+    //        |     | R_1_odd     | spread_R_1_odd    |                 |
     //
     // Output is in R_0_even, R_1_even
     pub(super) fn assign_f3(
@@ -308,9 +307,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         spread_halves_y: RoundWordSpread<F>,
         spread_halves_z: RoundWordSpread<F>,
     ) -> Result<(AssignedBits<16, F>, AssignedBits<16, F>), Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         self.s_f3f5.enable(region, row)?;
 
@@ -454,31 +451,31 @@ impl<F: FieldExt> CompressionConfig<F> {
 
     // For shift = 5..9
     // rotate_left_5 on a, b, c words
-    // s_rotate_left | a_0 |   a_1         |   a_2  |    a_3      |    a_4      |    a_5           |
-    //   1           |  1  |  b(16-shift)  |        | a_lo        |             |                  |
-    //               |     |  c(shift)     |        | a_hi        |             |                  |
-    //               |     |               |        | word_lo     |             |                  |
-    //               |     |               |        | word_hi     |             |                  |
-    //               |     |               |        | rol_word_lo |             |                  |
-    //               |     |               |        | rol_word_hi |             |                  |
+    // s_rotate_left | a_0 |   a_1         |   a_2  |    a_3      |
+    //   1           |  1  |  b(16-shift)  |        | a_lo        |
+    //               |     |  c(shift)     |        | a_hi        |
+    //               |     |               |        | word_lo     |
+    //               |     |               |        | word_hi     |
+    //               |     |               |        | rol_word_lo |
+    //               |     |               |        | rol_word_hi |
     // OR
     // For shift = 9..13
-    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3        |    a_4      |    a_5      |
-    //   1           |  1  | a(shift) |     | b_lo        |             |             |
-    //               |     | c(16)    |     | b_hi        |             |             |
-    //               |     |          |     | word_lo     |             |             |
-    //               |     |          |     | word_hi     |             |             |
-    //               |     |          |     | rol_word_lo |             |             |
-    //               |     |          |     | rol_word_hi |             |             |
+    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3        |
+    //   1           |  1  | a(shift) |     | b_lo        |
+    //               |     | c(16)    |     | b_hi        |
+    //               |     |          |     | word_lo     |
+    //               |     |          |     | word_hi     |
+    //               |     |          |     | rol_word_lo |
+    //               |     |          |     | rol_word_hi |
     // OR
     // For shift = 13..16
-    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3        |    a_4      |    a_5      |
-    //   1           |  1  | a(shift) |     |   b         |             |             |
-    //               |     | c(16)    |     |             |             |             |
-    //               |     |          |     | word_lo     |             |             |
-    //               |     |          |     | word_hi     |             |             |
-    //               |     |          |     | rol_word_lo |             |             |
-    //               |     |          |     | rol_word_hi |             |             |
+    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3        |
+    //   1           |  1  | a(shift) |     |   b         |
+    //               |     | c(16)    |     |             |
+    //               |     |          |     | word_lo     |
+    //               |     |          |     | word_hi     |
+    //               |     |          |     | rol_word_lo |
+    //               |     |          |     | rol_word_hi |
     pub(super) fn assign_rotate_left(
         &self,
         region: &mut Region<'_, F>,
@@ -487,9 +484,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         shift: u8,
     ) -> Result<RoundWordDense<F>, Error> {
         assert!(shift > 4 && shift < 16);
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         self.s_rotate_left[shift as usize - 5].enable(region, row)?;
 
@@ -624,16 +619,16 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok(RoundWordDense(rol_word_lo, rol_word_hi))
     }
 
-    // s_sum1 | a_0 |   a_1  |       a_2     | a_3   | a_4  | a_5   |
-    //   1    |     | sum_lo | spread_sum_lo | a_lo  |      |       |
-    //        |     | sum_hi | spread_sum_hi | a_hi  |      |       |
-    //        |     |        |               | f_lo  |      |       |
-    //        |     |        |               | f_hi  |      |       |
-    //        |     |        |               | x_lo  |      |       |
-    //        |     |        |               | x_hi  |      |       |
-    //        |     |        |               | k_lo  |      |       |
-    //        |     |        |               | k_hi  |      |       |
-    //        |     |        |               | carry |      |       |
+    // s_sum1 | a_0 |   a_1  |       a_2     | a_3   |
+    //   1    |     | sum_lo | spread_sum_lo | a_lo  |
+    //        |     | sum_hi | spread_sum_hi | a_hi  |
+    //        |     |        |               | f_lo  |
+    //        |     |        |               | f_hi  |
+    //        |     |        |               | x_lo  |
+    //        |     |        |               | x_hi  |
+    //        |     |        |               | k_lo  |
+    //        |     |        |               | k_hi  |
+    //        |     |        |               | carry |
     //
     pub(super) fn assign_sum_afxk(
         &self,
@@ -644,9 +639,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         x: RoundWordDense<F>,
         k: u32,
     ) -> Result<RoundWordDense<F>, Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         // Assign and copy a_lo, a_hi
         a.0.copy_advice(|| "a_lo", region, a_3, row)?;
@@ -694,12 +687,12 @@ impl<F: FieldExt> CompressionConfig<F> {
         Ok(dense.into())
     }
 
-    // s_sum_re | a_0 |   a_1  |       a_2     | a_3    | a_4  | a_5   |
-    //   1      |     | sum_lo | spread_sum_lo | rol_lo |      |       |
-    //          |     | sum_hi | spread_sum_hi | rol_hi |      |       |
-    //          |     |        |               | e_lo   |      |       |
-    //          |     |        |               | e_hi   |      |       |
-    //          |     |        |               | carry  |      |       |
+    // s_sum_re | a_0 |   a_1  |       a_2     | a_3    |
+    //   1      |     | sum_lo | spread_sum_lo | rol_lo |
+    //          |     | sum_hi | spread_sum_hi | rol_hi |
+    //          |     |        |               | e_lo   |
+    //          |     |        |               | e_hi   |
+    //          |     |        |               | carry  |
     //
     pub(super) fn assign_sum_re(
         &self,
@@ -708,10 +701,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         rol: RoundWordDense<F>,
         e: RoundWordDense<F>,
     ) -> Result<RoundWord<F>, Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
-
+        let a_3 = self.advice;
         // Assign and copy rol_lo, rol_hi
         rol.0.copy_advice(|| "rol_lo", region, a_3, row)?;
         rol.1.copy_advice(|| "rol_hi", region, a_3, row + 1)?;
@@ -744,14 +734,14 @@ impl<F: FieldExt> CompressionConfig<F> {
         })
     }
 
-    // s_sum_combine_ilr | a_0 |   a_1  |       a_2     | a_3            | a_4            | a_5            |
-    //   1               |     | sum_lo | spread_sum_lo | init_state_lo  |                |                |
-    //                   |     | sum_hi | spread_sum_hi | init_state_hi  |                |                |
-    //                   |     |        |               | left_state_lo  |                |                |
-    //                   |     |        |               | left_state_hi  |                |                |
-    //                   |     |        |               | right_state_lo |                |                |
-    //                   |     |        |               | right_state_lo |                |                |
-    //                   |     |        |               | carry          |                |                |
+    // s_sum_combine_ilr | a_0 |   a_1  |       a_2     | a_3            |
+    //   1               |     | sum_lo | spread_sum_lo | init_state_lo  |
+    //                   |     | sum_hi | spread_sum_hi | init_state_hi  |
+    //                   |     |        |               | left_state_lo  |
+    //                   |     |        |               | left_state_hi  |
+    //                   |     |        |               | right_state_lo |
+    //                   |     |        |               | right_state_lo |
+    //                   |     |        |               | carry          |
     //
     pub(super) fn assign_sum_combine_ilr(
         &self,
@@ -761,9 +751,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         left_state_word: RoundWordDense<F>,
         right_state_word: RoundWordDense<F>,
     ) -> Result<RoundWord<F>, Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         // Assign and copy init_state_lo, init_state_word_hi
         init_state_word
@@ -936,9 +924,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         word_hi: AssignedBits<16, F>,
         word: Value<u32>,
     ) -> Result<(), Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         self.s_decompose_word.enable(region, row)?;
 
@@ -956,9 +942,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         row: usize,
         word: RoundWordDense<F>,
     ) -> Result<(), Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         self.s_decompose_word.enable(region, row)?;
 

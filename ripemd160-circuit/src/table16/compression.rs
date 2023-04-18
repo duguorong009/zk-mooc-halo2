@@ -12,9 +12,7 @@ use crate::{
     table16::{compression::compression_gates::CompressionGate, gates::Gate},
 };
 
-use super::{
-    spread_table::SpreadInputs, AssignedBits, BlockWord, Table16Assignment, NUM_ADVICE_COLS,
-};
+use super::{spread_table::SpreadInputs, AssignedBits, BlockWord, Table16Assignment};
 
 mod compression_gates;
 mod compression_util;
@@ -129,7 +127,7 @@ pub enum RoundSide {
 #[derive(Debug, Clone)]
 pub(super) struct CompressionConfig<F: FieldExt> {
     lookup: SpreadInputs,
-    advice: [Column<Advice>; NUM_ADVICE_COLS],
+    advice: Column<Advice>,
 
     s_decompose_word: Selector,
     s_f1: Selector,
@@ -149,7 +147,7 @@ impl<F: FieldExt> CompressionConfig<F> {
     pub(super) fn configure(
         meta: &mut ConstraintSystem<F>,
         lookup: SpreadInputs,
-        advice: [Column<Advice>; NUM_ADVICE_COLS],
+        advice: Column<Advice>,
         s_decompose_word: Selector,
     ) -> Self {
         let s_f1 = meta.selector();
@@ -175,15 +173,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         let a_0 = lookup.tag;
         let a_1 = lookup.dense;
         let a_2 = lookup.spread;
-        let a_3 = advice[0];
-        let a_4 = advice[1];
-        let a_5 = advice[2];
+        let a_3 = advice;
 
         // s_decompose_word for all words
-        // s_decompose_word  | a_0 |   a_1    |    a_2    |    a_3    |    a_4    |    a_5    |
-        //         1         |     |          |           | lo        |           |           |
-        //                   |     |          |           | hi        |           |           |
-        //                   |     |          |           | word      |           |           |
+        // s_decompose_word  | a_0 |  a_1  |  a_2  |    a_3  |
+        //         1         |     |       |       | lo      |
+        //                   |     |       |       | hi      |
+        //                   |     |       |       | word    |
         //
         meta.create_gate("s_decompose_word", |meta| {
             let s_decompose_word = meta.query_selector(s_decompose_word);
@@ -195,13 +191,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // s_f1 on b, c, d words
-        // s_f1   | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5       |
-        //   1    |     |          | spread_r_0_even | spread_X_lo  |             |              |
-        //        |     |          | spread_r_0_odd  | spread_X_hi  |             |              |
-        //        |     |          | spread_r_1_even | spread_Y_lo  |             |              |
-        //        |     |          | spread_r_1_odd  | spread_Y_hi  |             |              |
-        //        |     |          |                 | spread_Z_lo  |             |              |
-        //        |     |          |                 | spread_Z_hi  |             |              |
+        // s_f1   | a_0 |   a_1  |       a_2       |    a_3       |
+        //   1    |     |        | spread_r_0_even | spread_X_lo  |
+        //        |     |        | spread_r_0_odd  | spread_X_hi  |
+        //        |     |        | spread_r_1_even | spread_Y_lo  |
+        //        |     |        | spread_r_1_odd  | spread_Y_hi  |
+        //        |     |        |                 | spread_Z_lo  |
+        //        |     |        |                 | spread_Z_hi  |
         //
         meta.create_gate("s_f1", |meta| {
             let s_f1 = meta.query_selector(s_f1);
@@ -233,18 +229,18 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         // s_f2 on b, c, d words
         // The f4 gate is the same as the f2 gate with arguments (D, B, C) instead of (B, C, D)
-        // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |    a_4      |    a_5           |
-        //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |             |                  |
-        //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |             |                  |
-        //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |             |                  |
-        //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |             |                  |
-        //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |             |                  |
-        //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |             |                  |
-        //        |     | Q_1_even | spread_Q_1_even | sum_lo          |             |                  |
-        //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |             |                  |
-        //        |     |          |                 | carry           |             |                  |
-        //        |     |          |                 | spread_neg_X_lo |             |                  |
-        //        |     |          |                 | spread_neg_X_hi |             |                  |
+        // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |
+        //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |
+        //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |
+        //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |
+        //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |
+        //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |
+        //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |
+        //        |     | Q_1_even | spread_Q_1_even | sum_lo          |
+        //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |
+        //        |     |          |                 | carry           |
+        //        |     |          |                 | spread_neg_X_lo |
+        //        |     |          |                 | spread_neg_X_hi |
         //
         meta.create_gate("s_f2f4", |meta| {
             let s_f2f4 = meta.query_selector(s_f2f4);
@@ -303,17 +299,17 @@ impl<F: FieldExt> CompressionConfig<F> {
         // s_f3 on b, c, d words
         // The f5 gate is the same as the f3 gate with arguments (C, D, B) instead of (B, C, D)
         // (b | !c) ^ d
-        // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |    a_4      |    a_5      |
-        //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_c_lo |             |             |
-        //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_c_hi |             |             |
-        //        |     | sum_1_even  | spread_sum_1_even | spread_b_lo     |             |             |
-        //        |     | sum_1_odd   | spread_sum_1_odd  | spread_b_hi     |             |             |
-        //        |     | or_lo       | spread_or_lo      | spread_d_lo     |             |             |
-        //        |     | or_hi       | spread_or_hi      | spread_d_hi     |             |             |
-        //        |     | R_0_even    | spread_R_0_even   | spread_c_lo     |             |             |
-        //        |     | R_0_odd     | spread_R_0_odd    | spread_c_hi     |             |             |
-        //        |     | R_1_even    | spread_R_1_even   |                 |             |             |
-        //        |     | R_1_odd     | spread_R_1_odd    |                 |             |             |
+        // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |
+        //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_c_lo |
+        //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_c_hi |
+        //        |     | sum_1_even  | spread_sum_1_even | spread_b_lo     |
+        //        |     | sum_1_odd   | spread_sum_1_odd  | spread_b_hi     |
+        //        |     | or_lo       | spread_or_lo      | spread_d_lo     |
+        //        |     | or_hi       | spread_or_hi      | spread_d_hi     |
+        //        |     | R_0_even    | spread_R_0_even   | spread_c_lo     |
+        //        |     | R_0_odd     | spread_R_0_odd    | spread_c_hi     |
+        //        |     | R_1_even    | spread_R_1_even   |                 |
+        //        |     | R_1_odd     | spread_R_1_odd    |                 |
         //
         meta.create_gate("s_f3f5", |meta| {
             let s_f3f5 = meta.query_selector(s_f3f5);
@@ -360,13 +356,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_5 on a, b, c words
-        // s_rol5 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo        |             |                  |
-        //        |     |  c       |        | a_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol5 | a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  b       |        | a_lo        |
+        //        |     |  c       |        | a_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("rotate_left_5", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[0]);
@@ -395,13 +391,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_6 on a, b, c words
-        // s_rol6 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo        |             |                  |
-        //        |     |  c       |        | a_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol6 | a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  b       |        | a_lo        |
+        //        |     |  c       |        | a_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("rotate_left_6", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[1]);
@@ -430,13 +426,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_7 on a, b, c words
-        // s_rol7 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo        |             |                  |
-        //        |     |  c       |        | a_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol7 | a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  b       |        | a_lo        |
+        //        |     |  c       |        | a_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("rotate_left_7", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[2]);
@@ -465,13 +461,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_8 on a, b, c words
-        // s_rol8 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo        |             |                  |
-        //        |     |  c       |        | a_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol8 | a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  b       |        | a_lo        |
+        //        |     |  c       |        | a_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("rotate_left_8", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[3]);
@@ -500,13 +496,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_9 on a, b, c words
-        // s_rol9 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b_lo        |             |                  |
-        //        |     |  c       |        | b_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol9 | a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  a       |        | b_lo        |
+        //        |     |  c       |        | b_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_9", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[4]);
@@ -535,13 +531,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_10 on a, b, c words
-        // s_rol10| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b_lo        |             |                  |
-        //        |     |  c       |        | b_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol10| a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  a       |        | b_lo        |
+        //        |     |  c       |        | b_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_10", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[5]);
@@ -570,13 +566,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_11 on a, b, c words
-        // s_rol11| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b_lo        |             |                  |
-        //        |     |  c       |        | b_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol11| a_0 |   a_1  |  a_2  |    a_3      |
+        //   1    |  1  |  a     |       | b_lo        |
+        //        |     |  c     |       | b_hi        |
+        //        |     |        |       | word_lo     |
+        //        |     |        |       | word_hi     |
+        //        |     |        |       | rol_word_lo |
+        //        |     |        |       | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_11", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[6]);
@@ -605,13 +601,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_12 on a, b, c words
-        // s_rol12| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b_lo        |             |                  |
-        //        |     |  c       |        | b_hi        |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol12| a_0 |   a_1    |   a_2  |    a_3      |
+        //   1    |  1  |  a       |        | b_lo        |
+        //        |     |  c       |        | b_hi        |
+        //        |     |          |        | word_lo     |
+        //        |     |          |        | word_hi     |
+        //        |     |          |        | rol_word_lo |
+        //        |     |          |        | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_12", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[7]);
@@ -640,13 +636,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_13 on a, b, c words
-        // s_rol13| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b           |             |                  |
-        //        |     |  c       |        |             |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol13| a_0 |   a_1  |  a_2  |    a_3      |
+        //   1    |  1  |  a     |       | b           |
+        //        |     |  c     |       |             |
+        //        |     |        |       | word_lo     |
+        //        |     |        |       | word_hi     |
+        //        |     |        |       | rol_word_lo |
+        //        |     |        |       | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_13", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[8]);
@@ -673,13 +669,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_14 on a, b, c words
-        // s_rol14| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b           |             |                  |
-        //        |     |  c       |        |             |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol14| a_0 |   a_1  |  a_2  |    a_3      |
+        //   1    |  1  |  a     |       | b           |
+        //        |     |  c     |       |             |
+        //        |     |        |       | word_lo     |
+        //        |     |        |       | word_hi     |
+        //        |     |        |       | rol_word_lo |
+        //        |     |        |       | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_14", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[9]);
@@ -706,13 +702,13 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_15 on a, b, c words
-        // s_rol15| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b           |             |                  |
-        //        |     |  c       |        |             |             |                  |
-        //        |     |          |        | word_lo     |             |                  |
-        //        |     |          |        | word_hi     |             |                  |
-        //        |     |          |        | rol_word_lo |             |                  |
-        //        |     |          |        | rol_word_hi |             |                  |
+        // s_rol15| a_0 |   a_1  |   a_2  |    a_3      |
+        //   1    |  1  |  a     |        | b           |
+        //        |     |  c     |        |             |
+        //        |     |        |        | word_lo     |
+        //        |     |        |        | word_hi     |
+        //        |     |        |        | rol_word_lo |
+        //        |     |        |        | rol_word_hi |
         //
         meta.create_gate("s_rotate_left_15", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[10]);
@@ -739,16 +735,16 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // s_sum_afxk
-        // s_sum_afxk | a_0 |   a_1    |  a_2  |    a_3   |    a_4   |    a_5    |
-        //   1        |     | sum_lo   |       | a_lo     |          |           |
-        //            |     | sum_hi   |       | a_hi     |          |           |
-        //            |     |          |       | f_lo     |          |           |
-        //            |     |          |       | f_hi     |          |           |
-        //            |     |          |       | x_lo     |          |           |
-        //            |     |          |       | x_hi     |          |           |
-        //            |     |          |       | k_lo     |          |           |
-        //            |     |          |       | k_hi     |          |           |
-        //            |     |          |       | carry    |          |           |
+        // s_sum_afxk | a_0 |   a_1    |  a_2  |    a_3  |
+        //   1        |     | sum_lo   |       | a_lo    |
+        //            |     | sum_hi   |       | a_hi    |
+        //            |     |          |       | f_lo    |
+        //            |     |          |       | f_hi    |
+        //            |     |          |       | x_lo    |
+        //            |     |          |       | x_hi    |
+        //            |     |          |       | k_lo    |
+        //            |     |          |       | k_hi    |
+        //            |     |          |       | carry   |
         //
         meta.create_gate("s_sum_afxk", |meta| {
             let s_sum_afxk = meta.query_selector(s_sum_afxk);
@@ -772,12 +768,12 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // s_sum_re
-        // s_sum_re | a_0 |   a_1    |  a_2  |    a_3   |    a_4   |    a_5   |
-        //   1      |     | sum_lo   |       | rol_lo   |          |          |
-        //          |     | sum_hi   |       | rol_hi   |          |          |
-        //          |     |          |       | e_lo     |          |          |
-        //          |     |          |       | e_hi     |          |          |
-        //          |     |          |       | carry    |          |          |
+        // s_sum_re | a_0 |   a_1  |  a_2  |    a_3   |
+        //   1      |     | sum_lo |       | rol_lo   |
+        //          |     | sum_hi |       | rol_hi   |
+        //          |     |        |       | e_lo     |
+        //          |     |        |       | e_hi     |
+        //          |     |        |       | carry    |
         //
         meta.create_gate("s_sum_re", |meta| {
             let s_sum_re = meta.query_selector(s_sum_re);
@@ -795,14 +791,14 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // s_sum_combine_ilr
-        // s_sum_combine_ilr | a_0 |   a_1    |  a_2  |       a_3      |       a_4      |       a_5      |
-        //   1               |     | sum_lo   |       | init_state_lo  |                |                |
-        //                   |     | sum_hi   |       | init_state_hi  |                |                |
-        //                   |     |          |       | left_state_lo  |                |                |
-        //                   |     |          |       | left_state_hi  |                |                |
-        //                   |     |          |       | right_state_lo |                |                |
-        //                   |     |          |       | right_state_lo |                |                |
-        //                   |     |          |       | carry          |                |                |
+        // s_sum_combine_ilr | a_0 |   a_1    |  a_2  |       a_3      |
+        //   1               |     | sum_lo   |       | init_state_lo  |
+        //                   |     | sum_hi   |       | init_state_hi  |
+        //                   |     |          |       | left_state_lo  |
+        //                   |     |          |       | left_state_hi  |
+        //                   |     |          |       | right_state_lo |
+        //                   |     |          |       | right_state_lo |
+        //                   |     |          |       | carry          |
         //
         meta.create_gate("s_sum_combine_ilr", |meta| {
             let s_sum_ilr = meta.query_selector(s_sum_combine_ilr);
@@ -991,10 +987,7 @@ mod tests {
                     .compress(&mut layouter, initial_state, w_halves)?;
                 let (a, b, c, d, e) = match_state(state.clone());
 
-                let a_3 = config.compression.advice[0];
-                let a_4 = config.compression.advice[1];
-                let a_5 = config.compression.advice[2];
-
+                let a_3 = config.compression.advice;
                 layouter.assign_region(
                     || "check digest",
                     |mut region| {

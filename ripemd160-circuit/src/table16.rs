@@ -207,8 +207,6 @@ impl<F: FieldExt> AssignedBits<32, F> {
     }
 }
 
-pub const NUM_ADVICE_COLS: usize = 3;
-
 /// Configuration of [`Table16Chip`]
 #[derive(Clone, Debug)]
 pub struct Table16Config<F: FieldExt> {
@@ -245,11 +243,7 @@ impl<F: FieldExt> Table16Chip<F> {
     /// Configure a circuit to include this chip.
     pub fn configure(meta: &mut ConstraintSystem<F>) -> <Self as Chip<F>>::Config {
         // columns required for this chip
-        let advice: [Column<Advice>; NUM_ADVICE_COLS] = [
-            meta.advice_column(),
-            meta.advice_column(),
-            meta.advice_column(),
-        ];
+        let advice = meta.advice_column();
 
         // Three advice columns to interact with lookup tables
         let input_tag = meta.advice_column();
@@ -263,12 +257,10 @@ impl<F: FieldExt> Table16Chip<F> {
         let _a_0 = lookup_inputs.tag;
         let a_1 = lookup_inputs.dense;
         let a_2 = lookup_inputs.spread;
-        let a_3 = advice[0];
-        let a_4 = advice[1];
-        let a_5 = advice[2];
+        let a_3 = advice;
 
         // Add all advice columns to permutation
-        for col in [a_1, a_2, a_3, a_4, a_5].iter() {
+        for col in [a_1, a_2, a_3].iter() {
             meta.enable_equality(*col);
         }
 
@@ -337,8 +329,6 @@ trait Table16Assignment<F: FieldExt> {
         region: &mut Region<'_, F>,
         lookup: &SpreadInputs,
         a_3: Column<Advice>,
-        a_4: Column<Advice>,
-        a_5: Column<Advice>,
         word: Value<u32>,
         row: usize,
     ) -> Result<

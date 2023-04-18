@@ -16,13 +16,13 @@ impl<F: FieldExt> CompressionGate<F> {
     // Gate for B ^ C ^ D; XOR of three 32 bit words
     // Output is in R_0_even, R_1_even
     //
-    // s_f1 | a_0 |   a_1    |       a_2       |    a_3      |    a_4      |    a_5      |
-    //   1  |     | R_0_even | spread_R_0_even | spread_B_lo |             |             |
-    //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi |             |             |
-    //      |     | R_1_even | spread_R_1_even | spread_C_lo |             |             |
-    //      |     | R_1_odd  | spread_R_1_odd  | spread_C_hi |             |             |
-    //      |     |          |                 | spread_D_lo |             |             |
-    //      |     |          |                 | spread_D_hi |             |             |
+    // s_f1 | a_0 |   a_1    |       a_2       |    a_3      |
+    //   1  |     | R_0_even | spread_R_0_even | spread_B_lo |
+    //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi |
+    //      |     | R_1_even | spread_R_1_even | spread_C_lo |
+    //      |     | R_1_odd  | spread_R_1_odd  | spread_C_hi |
+    //      |     |          |                 | spread_D_lo |
+    //      |     |          |                 | spread_D_hi |
     //
     pub fn f1_gate(
         s_f1: Expression<F>,
@@ -55,18 +55,18 @@ impl<F: FieldExt> CompressionGate<F> {
     // f4(B, C, D) = (B & D) | (C & !D)
     // Output is in sum_lo, sum_hi
     //
-    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |    a_4      |    a_5           |
-    //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |             |                  |
-    //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |             |                  |
-    //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |             |                  |
-    //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |             |                  |
-    //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |             |                  |
-    //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |             |                  |
-    //        |     | Q_1_even | spread_Q_1_even | sum_lo          |             |                  |
-    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |             |                  |
-    //        |     |          |                 | carry           |             |                  |
-    //        |     |          |                 | spread_neg_X_lo |             |                  |
-    //        |     |          |                 | spread_neg_X_hi |             |                  |
+    // s_f2f4 | a_0 |   a_1    |       a_2       |    a_3          |
+    //   1    |     | P_0_even | spread_P_0_even | spread_X_lo     |
+    //        |     | P_0_odd  | spread_P_0_odd  | spread_X_hi     |
+    //        |     | P_1_even | spread_P_1_even | spread_Y_lo     |
+    //        |     | P_1_odd  | spread_P_1_odd  | spread_Y_hi     |
+    //        |     | Q_0_even | spread_Q_0_even | spread_Z_lo     |
+    //        |     | Q_0_odd  | spread_Q_0_odd  | spread_Z_hi     |
+    //        |     | Q_1_even | spread_Q_1_even | sum_lo          |
+    //        |     | Q_1_odd  | spread_Q_1_odd  | sum_hi          |
+    //        |     |          |                 | carry           |
+    //        |     |          |                 | spread_neg_X_lo |
+    //        |     |          |                 | spread_neg_X_hi |
     //
     // Output is sum_lo, sum_hi
     pub fn f2_gate(
@@ -158,17 +158,17 @@ impl<F: FieldExt> CompressionGate<F> {
     // f5(X, Y, Z) = X ^ (Y | !Z)
     // Output is in R_0_even, R_1_even
     //
-    // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |    a_4      |    a_5      |
-    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo |             |             |
-    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi |             |             |
-    //        |     | sum_1_even  | spread_sum_1_even | spread_X_lo     |             |             |
-    //        |     | sum_1_odd   | spread_sum_1_odd  | spread_X_hi     |             |             |
-    //        |     | or_lo       | spread_or_lo      | spread_Z_lo     |             |             |
-    //        |     | or_hi       | spread_or_hi      | spread_Z_hi     |             |             |
-    //        |     | R_0_even    | spread_R_0_even   | spread_Y_lo     |             |             |
-    //        |     | R_0_odd     | spread_R_0_odd    | spread_Y_hi     |             |             |
-    //        |     | R_1_even    | spread_R_1_even   |                 |             |             |
-    //        |     | R_1_odd     | spread_R_1_odd    |                 |             |             |
+    // s_f3f5 | a_0 |   a_1       |       a_2         |    a_3          |
+    //   1    |     | sum_0_even  | spread_sum_0_even | spread_neg_Y_lo |
+    //        |     | sum_0_odd   | spread_sum_0_odd  | spread_neg_Y_hi |
+    //        |     | sum_1_even  | spread_sum_1_even | spread_X_lo     |
+    //        |     | sum_1_odd   | spread_sum_1_odd  | spread_X_hi     |
+    //        |     | or_lo       | spread_or_lo      | spread_Z_lo     |
+    //        |     | or_hi       | spread_or_hi      | spread_Z_hi     |
+    //        |     | R_0_even    | spread_R_0_even   | spread_Y_lo     |
+    //        |     | R_0_odd     | spread_R_0_odd    | spread_Y_hi     |
+    //        |     | R_1_even    | spread_R_1_even   |                 |
+    //        |     | R_1_odd     | spread_R_1_odd    |                 |
     pub fn f3_gate(
         s_f3f5: Expression<F>,
         spread_r0_even: Expression<F>,
@@ -951,11 +951,9 @@ mod tests {
             let input_tag = meta.advice_column();
             let input_dense = meta.advice_column();
             let input_spread = meta.advice_column();
-            let advice = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+
+            let advice = meta.advice_column();
+
             let s_decompose_word = meta.selector();
 
             let lookup = SpreadTableChip::configure(meta, input_tag, input_dense, input_spread);
@@ -964,12 +962,10 @@ mod tests {
             let _a_0 = lookup_inputs.tag;
             let a_1 = lookup_inputs.dense;
             let a_2 = lookup_inputs.spread;
-            let a_3 = advice[0];
-            let a_4 = advice[1];
-            let a_5 = advice[2];
+            let a_3 = advice;
 
             // Add all advice columns to permutation
-            for column in [a_1, a_2, a_3, a_4, a_5].iter() {
+            for column in [a_1, a_2, a_3].iter() {
                 meta.enable_equality(*column);
             }
 
@@ -992,9 +988,7 @@ mod tests {
             layouter.assign_region(
                 || "compression_gate testing",
                 |mut region: Region<Fp>| {
-                    let a_3 = config.compression.advice[0];
-                    let a_4 = config.compression.advice[1];
-                    let a_5 = config.compression.advice[2];
+                    let a_3 = config.compression.advice;
 
                     let mut row = 0_usize;
 
@@ -1004,8 +998,6 @@ mod tests {
                             &mut region,
                             &config.lookup.input,
                             a_3,
-                            a_4,
-                            a_5,
                             Value::known(self.b),
                             row,
                         )?;
@@ -1018,8 +1010,6 @@ mod tests {
                             &mut region,
                             &config.lookup.input,
                             a_3,
-                            a_4,
-                            a_5,
                             Value::known(self.c),
                             row,
                         )?;
@@ -1032,8 +1022,6 @@ mod tests {
                             &mut region,
                             &config.lookup.input,
                             a_3,
-                            a_4,
-                            a_5,
                             Value::known(self.d),
                             row,
                         )?;

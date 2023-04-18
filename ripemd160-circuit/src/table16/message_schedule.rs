@@ -9,10 +9,7 @@ use halo2_proofs::{
 
 use crate::constants::BLOCK_SIZE;
 
-use super::{
-    gates::Gate, spread_table::SpreadInputs, AssignedBits, BlockWord, Table16Assignment,
-    NUM_ADVICE_COLS,
-};
+use super::{gates::Gate, spread_table::SpreadInputs, AssignedBits, BlockWord, Table16Assignment};
 
 // Rows needed for each decompose gate
 pub const DECOMPOSE_WORD_ROWS: usize = 2;
@@ -31,7 +28,7 @@ impl<F: FieldExt> std::ops::Deref for MessageWord<F> {
 #[derive(Debug, Clone)]
 pub(super) struct MessageScheduleConfig<F: FieldExt> {
     lookup: SpreadInputs,
-    advice: [Column<Advice>; NUM_ADVICE_COLS],
+    advice: Column<Advice>,
 
     /// Decomposition gate for X[0..16]
     s_decompose_word: Selector,
@@ -50,13 +47,11 @@ impl<F: FieldExt> MessageScheduleConfig<F> {
     pub(super) fn configure(
         meta: &mut ConstraintSystem<F>,
         lookup: SpreadInputs,
-        advice: [Column<Advice>; NUM_ADVICE_COLS],
+        advice: Column<Advice>,
         s_decompose_word: Selector,
     ) -> Self {
         // Rename these here for ease of matching the gates to the spec
-        let a_3 = advice[0];
-        let a_4 = advice[1];
-        let a_5 = advice[2];
+        let a_3 = advice;
 
         // s_decompose_word for all words
         meta.create_gate("s_decompose_word", |meta| {
@@ -135,9 +130,7 @@ impl<F: FieldExt> MessageScheduleConfig<F> {
         Error,
     > {
         // Rename these here for ease of matching the gates to the spec
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         let row = get_word_row(word_idx);
         self.s_decompose_word.enable(region, row)?;
@@ -147,8 +140,6 @@ impl<F: FieldExt> MessageScheduleConfig<F> {
             region,
             &self.lookup,
             a_3,
-            a_4,
-            a_5,
             word,
             row,
         )?;

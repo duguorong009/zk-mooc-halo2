@@ -15,9 +15,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         region: &mut Region<'_, F>,
         iv: [u32; DIGEST_SIZE],
     ) -> Result<State<F>, Error> {
-        let a_3 = self.advice[0];
-        let a_4 = self.advice[1];
-        let a_5 = self.advice[2];
+        let a_3 = self.advice;
 
         let mut row: usize = 0;
         self.s_decompose_word.enable(region, row)?;
@@ -26,8 +24,6 @@ impl<F: FieldExt> CompressionConfig<F> {
             region,
             &self.lookup,
             a_3,
-            a_4,
-            a_5,
             Value::known(iv[0]),
             row,
         )?;
@@ -40,8 +36,6 @@ impl<F: FieldExt> CompressionConfig<F> {
             region,
             &self.lookup,
             a_3,
-            a_4,
-            a_5,
             Value::known(iv[1]),
             row,
         )?;
@@ -57,8 +51,6 @@ impl<F: FieldExt> CompressionConfig<F> {
             region,
             &self.lookup,
             a_3,
-            a_4,
-            a_5,
             Value::known(iv[2]),
             row,
         )?;
@@ -74,8 +66,6 @@ impl<F: FieldExt> CompressionConfig<F> {
             region,
             &self.lookup,
             a_3,
-            a_4,
-            a_5,
             Value::known(iv[3]),
             row,
         )?;
@@ -91,8 +81,6 @@ impl<F: FieldExt> CompressionConfig<F> {
             region,
             &self.lookup,
             a_3,
-            a_4,
-            a_5,
             Value::known(iv[4]),
             row,
         )?;

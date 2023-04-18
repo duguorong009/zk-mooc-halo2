@@ -14,10 +14,12 @@ use super::{CompressionConfig, RoundWord, RoundWordDense, RoundWordSpread, State
 
 impl<F: FieldExt> CompressionConfig<F> {
     // s_f1 | a_0 |   a_1    |       a_2       |    a_3      |    a_4      |    a_5      |
-    //   1  |     | R_0_even | spread_R_0_even | spread_B_lo | spread_C_lo | spread_D_lo |
-    //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi | spread_C_hi | spread_D_hi |
-    //      |     | R_1_even | spread_R_1_even |             |             |             |
-    //      |     | R_1_odd  | spread_R_1_odd  |             |             |             |
+    //   1  |     | R_0_even | spread_R_0_even | spread_B_lo |             |             |
+    //      |     | R_0_odd  | spread_R_0_odd  | spread_B_hi |             |             |
+    //      |     | R_1_even | spread_R_1_even | spread_C_lo |             |             |
+    //      |     | R_1_odd  | spread_R_1_odd  | spread_C_hi |             |             |
+    //      |     |          |                 | spread_D_lo |             |             |
+    //      |     |          |                 | spread_D_hi |             |             |
     //
     pub(super) fn assign_f1(
         &self,
@@ -44,18 +46,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         // Assign and copy spread_c_lo, spread_c_hi
         spread_halves_c
             .0
-            .copy_advice(|| "spread_c_lo", region, a_4, row)?;
+            .copy_advice(|| "spread_c_lo", region, a_3, row + 2)?;
         spread_halves_c
             .1
-            .copy_advice(|| "spread_c_hi", region, a_4, row + 1)?;
+            .copy_advice(|| "spread_c_hi", region, a_3, row + 3)?;
 
         // Assign and copy spread_d_lo, spread_d_hi
         spread_halves_d
             .0
-            .copy_advice(|| "spread_d_lo", region, a_5, row)?;
+            .copy_advice(|| "spread_d_lo", region, a_3, row + 4)?;
         spread_halves_d
             .1
-            .copy_advice(|| "spread_d_hi", region, a_5, row + 1)?;
+            .copy_advice(|| "spread_d_hi", region, a_3, row + 5)?;
 
         let m: Value<[bool; 64]> = spread_halves_b
             .value()

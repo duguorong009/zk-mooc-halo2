@@ -196,10 +196,12 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         // s_f1 on b, c, d words
         // s_f1   | a_0 |   a_1    |       a_2       |    a_3       |    a_4      |    a_5       |
-        //   1    |     |          | spread_r_0_even | spread_X_lo  | spread_Y_lo | spread_Z_lo  |
-        //        |     |          | spread_r_0_odd  | spread_X_hi  | spread_Y_hi | spread_Z_hi  |
-        //        |     |          | spread_r_1_even |              |             |              |
-        //        |     |          | spread_r_1_odd  |              |             |              |
+        //   1    |     |          | spread_r_0_even | spread_X_lo  |             |              |
+        //        |     |          | spread_r_0_odd  | spread_X_hi  |             |              |
+        //        |     |          | spread_r_1_even | spread_Y_lo  |             |              |
+        //        |     |          | spread_r_1_odd  | spread_Y_hi  |             |              |
+        //        |     |          |                 | spread_Z_lo  |             |              |
+        //        |     |          |                 | spread_Z_hi  |             |              |
         //
         meta.create_gate("s_f1", |meta| {
             let s_f1 = meta.query_selector(s_f1);
@@ -207,12 +209,12 @@ impl<F: FieldExt> CompressionConfig<F> {
             let spread_r0_odd = meta.query_advice(a_2, Rotation(1));
             let spread_r1_even = meta.query_advice(a_2, Rotation(2));
             let spread_r1_odd = meta.query_advice(a_2, Rotation(3));
-            let spread_b_lo = meta.query_advice(a_3, Rotation::cur());
-            let spread_b_hi = meta.query_advice(a_3, Rotation::next());
-            let spread_c_lo = meta.query_advice(a_4, Rotation::cur());
-            let spread_c_hi = meta.query_advice(a_4, Rotation::next());
-            let spread_d_lo = meta.query_advice(a_5, Rotation::cur());
-            let spread_d_hi = meta.query_advice(a_5, Rotation::next());
+            let spread_b_lo = meta.query_advice(a_3, Rotation(0));
+            let spread_b_hi = meta.query_advice(a_3, Rotation(1));
+            let spread_c_lo = meta.query_advice(a_3, Rotation(2));
+            let spread_c_hi = meta.query_advice(a_3, Rotation(3));
+            let spread_d_lo = meta.query_advice(a_3, Rotation(4));
+            let spread_d_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::f1_gate(
                 s_f1,

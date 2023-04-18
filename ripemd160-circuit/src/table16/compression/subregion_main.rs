@@ -35,7 +35,7 @@ impl<F: FieldExt> CompressionConfig<F> {
                 c.spread_halves,
                 d.spread_halves,
             )?;
-            *row += 4; // f1 requires 4 rows
+            *row += 6; // f1 requires 6 rows
             f1_out
         } else if (phase_idx == 2 && round_side == Left) || (phase_idx == 4 && round_side == Right)
         {

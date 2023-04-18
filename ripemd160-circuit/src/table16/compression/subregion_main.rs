@@ -159,7 +159,7 @@ impl<F: FieldExt> CompressionConfig<F> {
             c_left.dense_halves,
             d_right.dense_halves,
         )?;
-        *row += 3;
+        *row += 7;
         let b = self.assign_sum_combine_ilr(
             region,
             *row,
@@ -167,11 +167,11 @@ impl<F: FieldExt> CompressionConfig<F> {
             d_left.dense_halves,
             e_right,
         )?;
-        *row += 3;
+        *row += 7;
         let c = self.assign_sum_combine_ilr(region, *row, h3.dense_halves, e_left, a_right)?;
-        *row += 3;
+        *row += 7;
         let d = self.assign_sum_combine_ilr(region, *row, h4, a_left, b_right.dense_halves)?;
-        *row += 3;
+        *row += 7;
         let e = self.assign_sum_combine_ilr(
             region,
             *row,
@@ -179,7 +179,7 @@ impl<F: FieldExt> CompressionConfig<F> {
             b_left.dense_halves,
             c_right.dense_halves,
         )?;
-        *row += 3;
+        *row += 7;
 
         Ok(State::new(
             StateWord::A(a.dense_halves),

@@ -744,10 +744,14 @@ impl<F: FieldExt> CompressionConfig<F> {
         })
     }
 
-    // s_sum_combine_ilr | a_0 |   a_1  |       a_2     | a_3           | a_4           | a_5            |
-    //   1               |     | sum_lo | spread_sum_lo | init_state_lo | left_state_lo | right_state_lo |
-    //                   |     | sum_hi | spread_sum_hi | init_state_hi | left_state_hi | right_state_lo |
-    //                   |     |        |               | carry         |               |                |
+    // s_sum_combine_ilr | a_0 |   a_1  |       a_2     | a_3            | a_4            | a_5            |
+    //   1               |     | sum_lo | spread_sum_lo | init_state_lo  |                |                |
+    //                   |     | sum_hi | spread_sum_hi | init_state_hi  |                |                |
+    //                   |     |        |               | left_state_lo  |                |                |
+    //                   |     |        |               | left_state_hi  |                |                |
+    //                   |     |        |               | right_state_lo |                |                |
+    //                   |     |        |               | right_state_lo |                |                |
+    //                   |     |        |               | carry          |                |                |
     //
     pub(super) fn assign_sum_combine_ilr(
         &self,
@@ -772,18 +776,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         // Assign and copy left_state_word_lo, left_state_word_hi
         left_state_word
             .0
-            .copy_advice(|| "left_state_word_lo", region, a_4, row)?;
+            .copy_advice(|| "left_state_word_lo", region, a_3, row + 2)?;
         left_state_word
             .1
-            .copy_advice(|| "left_state_word_hi", region, a_4, row + 1)?;
+            .copy_advice(|| "left_state_word_hi", region, a_3, row + 3)?;
 
         // Assign and copy right_state_word_lo, right_state_word_hi
         right_state_word
             .0
-            .copy_advice(|| "right_state_word_lo", region, a_5, row)?;
+            .copy_advice(|| "right_state_word_lo", region, a_3, row + 4)?;
         right_state_word
             .1
-            .copy_advice(|| "right_state_word_hi", region, a_5, row + 1)?;
+            .copy_advice(|| "right_state_word_hi", region, a_3, row + 5)?;
 
         let (sum, carry) = sum_with_carry(vec![
             (init_state_word.0.value_u16(), init_state_word.1.value_u16()),
@@ -797,7 +801,7 @@ impl<F: FieldExt> CompressionConfig<F> {
         region.assign_advice(
             || "sum_combine_ilr_carry",
             a_3,
-            row + 2,
+            row + 6,
             || carry.map(|value| F::from(value as u64)),
         )?;
 

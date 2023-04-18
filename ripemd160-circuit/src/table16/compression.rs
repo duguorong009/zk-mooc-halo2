@@ -795,22 +795,26 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // s_sum_combine_ilr
-        // s_sum_combine_ilr | a_0 |   a_1    |  a_2  |       a_3     |       a_4      |       a_5      |
-        //   1               |     | sum_lo   |       | init_state_lo | left_state_lo  | right_state_lo |
-        //                   |     | sum_hi   |       | init_state_hi | left_state_hi  | right_state_hi |
-        //                   |     |          |       |               |                | carry          |
+        // s_sum_combine_ilr | a_0 |   a_1    |  a_2  |       a_3      |       a_4      |       a_5      |
+        //   1               |     | sum_lo   |       | init_state_lo  |                |                |
+        //                   |     | sum_hi   |       | init_state_hi  |                |                |
+        //                   |     |          |       | left_state_lo  |                |                |
+        //                   |     |          |       | left_state_hi  |                |                |
+        //                   |     |          |       | right_state_lo |                |                |
+        //                   |     |          |       | right_state_lo |                |                |
+        //                   |     |          |       | carry          |                |                |
         //
         meta.create_gate("s_sum_combine_ilr", |meta| {
             let s_sum_ilr = meta.query_selector(s_sum_combine_ilr);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());
             let sum_hi = meta.query_advice(a_1, Rotation::next());
-            let init_state_lo = meta.query_advice(a_3, Rotation::cur());
-            let init_state_hi = meta.query_advice(a_3, Rotation::next());
-            let left_state_lo = meta.query_advice(a_4, Rotation::cur());
-            let left_state_hi = meta.query_advice(a_4, Rotation::next());
-            let right_state_lo = meta.query_advice(a_5, Rotation::cur());
-            let right_state_hi = meta.query_advice(a_5, Rotation::next());
-            let carry = meta.query_advice(a_3, Rotation(2));
+            let init_state_lo = meta.query_advice(a_3, Rotation(0));
+            let init_state_hi = meta.query_advice(a_3, Rotation(1));
+            let left_state_lo = meta.query_advice(a_3, Rotation(2));
+            let left_state_hi = meta.query_advice(a_3, Rotation(3));
+            let right_state_lo = meta.query_advice(a_3, Rotation(4));
+            let right_state_hi = meta.query_advice(a_3, Rotation(5));
+            let carry = meta.query_advice(a_3, Rotation(6));
 
             CompressionGate::sum_combine_ilr(
                 s_sum_ilr,

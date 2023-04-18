@@ -1440,9 +1440,9 @@ mod tests {
                         c_round_word_dense.clone(),
                         d_round_word_dense.clone(),
                     )?;
-                    row += 3; // sum_combine_ilr_gate requires three rows
+                    row += 7; // sum_combine_ilr_gate requires seven rows
 
-                    // row = 194
+                    // row = 198
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,

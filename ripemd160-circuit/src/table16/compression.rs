@@ -773,18 +773,21 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         // s_sum_re
         // s_sum_re | a_0 |   a_1    |  a_2  |    a_3   |    a_4   |    a_5   |
-        //   1      |     | sum_lo   |       | rol_lo   | e_lo     | carry    |
-        //          |     | sum_hi   |       | rol_hi   | e_hi     |          |
+        //   1      |     | sum_lo   |       | rol_lo   |          |          |
+        //          |     | sum_hi   |       | rol_hi   |          |          |
+        //          |     |          |       | e_lo     |          |          |
+        //          |     |          |       | e_hi     |          |          |
+        //          |     |          |       | carry    |          |          |
         //
         meta.create_gate("s_sum_re", |meta| {
             let s_sum_re = meta.query_selector(s_sum_re);
             let sum_lo = meta.query_advice(a_1, Rotation::cur());
             let sum_hi = meta.query_advice(a_1, Rotation::next());
-            let rol_lo = meta.query_advice(a_3, Rotation::cur());
-            let rol_hi = meta.query_advice(a_3, Rotation::next());
-            let e_lo = meta.query_advice(a_4, Rotation::cur());
-            let e_hi = meta.query_advice(a_4, Rotation::next());
-            let carry = meta.query_advice(a_5, Rotation::cur());
+            let rol_lo = meta.query_advice(a_3, Rotation(0));
+            let rol_hi = meta.query_advice(a_3, Rotation(1));
+            let e_lo = meta.query_advice(a_3, Rotation(2));
+            let e_hi = meta.query_advice(a_3, Rotation(3));
+            let carry = meta.query_advice(a_3, Rotation(4));
 
             CompressionGate::sum_re_gate(
                 s_sum_re, sum_lo, sum_hi, carry, rol_lo, rol_hi, e_lo, e_hi,

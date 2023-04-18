@@ -1419,9 +1419,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         c_round_word_dense.clone(),
                     )?;
-                    row += 2; // sum_re_gate requires two rows
+                    row += 5; // sum_re_gate requires five rows
 
-                    // row = 185
+                    // row = 188
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1431,7 +1431,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 188
+                    // row = 191
                     // Testing sum_re_gate
                     let sum = config.compression.assign_sum_combine_ilr(
                         &mut region,
@@ -1442,7 +1442,7 @@ mod tests {
                     )?;
                     row += 3; // sum_combine_ilr_gate requires three rows
 
-                    // row = 191
+                    // row = 194
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,

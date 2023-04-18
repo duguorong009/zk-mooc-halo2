@@ -695,8 +695,11 @@ impl<F: FieldExt> CompressionConfig<F> {
     }
 
     // s_sum_re | a_0 |   a_1  |       a_2     | a_3    | a_4  | a_5   |
-    //   1      |     | sum_lo | spread_sum_lo | rol_lo | e_lo | carry |
-    //          |     | sum_hi | spread_sum_hi | rol_hi | e_hi |       |
+    //   1      |     | sum_lo | spread_sum_lo | rol_lo |      |       |
+    //          |     | sum_hi | spread_sum_hi | rol_hi |      |       |
+    //          |     |        |               | e_lo   |      |       |
+    //          |     |        |               | e_hi   |      |       |
+    //          |     |        |               | carry  |      |       |
     //
     pub(super) fn assign_sum_re(
         &self,
@@ -714,8 +717,8 @@ impl<F: FieldExt> CompressionConfig<F> {
         rol.1.copy_advice(|| "rol_hi", region, a_3, row + 1)?;
 
         // Assign and copy e_lo, e_hi
-        e.0.copy_advice(|| "e_lo", region, a_4, row)?;
-        e.1.copy_advice(|| "e_hi", region, a_4, row + 1)?;
+        e.0.copy_advice(|| "e_lo", region, a_3, row + 2)?;
+        e.1.copy_advice(|| "e_hi", region, a_3, row + 3)?;
 
         let (sum, carry) = sum_with_carry(vec![
             (rol.0.value_u16(), rol.1.value_u16()),
@@ -724,8 +727,8 @@ impl<F: FieldExt> CompressionConfig<F> {
 
         region.assign_advice(
             || "sum_re_carry",
-            a_5,
-            row,
+            a_3,
+            row + 4,
             || carry.map(|value| F::from(value as u64)),
         )?;
 

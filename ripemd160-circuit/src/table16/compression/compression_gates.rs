@@ -1169,9 +1169,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         5,
                     )?;
-                    row += 2; // rotate_left_5 requires two rows
+                    row += 6; // rotate_left_5 requires six rows
 
-                    // row = 74
+                    // row = 78
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1181,7 +1181,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 77
+                    // row = 81
                     // Testing rotate_left_6 gate
                     let rol_6_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1189,9 +1189,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         6,
                     )?;
-                    row += 2; // rotate_left_6 requires two rows
+                    row += 6; // rotate_left_6 requires six rows
 
-                    // row = 79
+                    // row = 87
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1201,7 +1201,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 82
+                    // row = 90
                     // Testing rotate_left_7 gate
                     let rol_7_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1209,9 +1209,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         7,
                     )?;
-                    row += 2; // rotate_left_7 requires two rows
+                    row += 6; // rotate_left_7 requires six rows
 
-                    // row = 84
+                    // row = 96
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1221,7 +1221,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 87
+                    // row = 99
                     // Testing rotate_left_8 gate
                     let rol_8_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1229,9 +1229,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         8,
                     )?;
-                    row += 2; // rotate_left_8 requires two rows
+                    row += 6; // rotate_left_8 requires six rows
 
-                    // row = 89
+                    // row = 105
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1241,7 +1241,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 92
+                    // row = 108
                     // Testing rotate_left_9 gate
                     let rol_9_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1249,9 +1249,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         9,
                     )?;
-                    row += 2; // rotate_left_9 requires two rows
+                    row += 6; // rotate_left_9 requires six rows
 
-                    // row = 94
+                    // row = 114
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1261,7 +1261,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 97
+                    // row = 117
                     // Testing rotate_left_10 gate
                     let rol_10_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1269,9 +1269,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         10,
                     )?;
-                    row += 2; // rotate_left_10 requires two rows
+                    row += 6; // rotate_left_10 requires six rows
 
-                    // row = 99
+                    // row = 123
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1281,7 +1281,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 102
+                    // row = 126
                     // Testing rotate_left_11 gate
                     let rol_11_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1289,9 +1289,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         11,
                     )?;
-                    row += 2; // rotate_left_11 requires two rows
+                    row += 6; // rotate_left_11 requires six rows
 
-                    // row = 104
+                    // row = 132
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1301,7 +1301,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 107
+                    // row = 135
                     // Testing rotate_left_12 gate
                     let rol_12_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1309,9 +1309,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         12,
                     )?;
-                    row += 2; // rotate_left_12 requires two rows
+                    row += 6; // rotate_left_12 requires six rows
 
-                    // row = 109
+                    // row = 141
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1321,7 +1321,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 112
+                    // row = 144
                     // Testing rotate_left_13 gate
                     let rol_13_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1329,9 +1329,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         13,
                     )?;
-                    row += 2; // rotate_left_13 requires two rows
+                    row += 6; // rotate_left_13 requires six rows
 
-                    // row = 114
+                    // row = 150
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1341,7 +1341,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 117
+                    // row = 153
                     // Testing rotate_left_14 gate
                     let rol_14_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1349,9 +1349,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         14,
                     )?;
-                    row += 2; // rotate_left_14 requires two rows
+                    row += 6; // rotate_left_14 requires six rows
 
-                    // row = 119
+                    // row = 159
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1361,7 +1361,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 122
+                    // row = 162
                     // Testing rotate_left_15 gate
                     let rol_15_b = config.compression.assign_rotate_left(
                         &mut region,
@@ -1369,9 +1369,9 @@ mod tests {
                         b_round_word_dense.clone(),
                         15,
                     )?;
-                    row += 2; // rotate_left_15 requires two rows
+                    row += 6; // rotate_left_15 requires six rows
 
-                    // row = 124
+                    // row = 168
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1381,7 +1381,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 127
+                    // row = 171
                     // Testing sum_afxk_gate
                     let c_round_word_dense = RoundWordDense(
                         spread_c_var_lo.clone().dense,
@@ -1401,7 +1401,7 @@ mod tests {
                     )?;
                     row += 3; // sum_afxk_gate requires three rows
 
-                    // row = 130
+                    // row = 174
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1411,7 +1411,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 133
+                    // row = 177
                     // Testing sum_re_gate
                     let sum = config.compression.assign_sum_re(
                         &mut region,
@@ -1421,7 +1421,7 @@ mod tests {
                     )?;
                     row += 2; // sum_re_gate requires two rows
 
-                    // row = 135
+                    // row = 179
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,
@@ -1431,7 +1431,7 @@ mod tests {
                     )?;
                     row += 3;
 
-                    // row = 138
+                    // row = 182
                     // Testing sum_re_gate
                     let sum = config.compression.assign_sum_combine_ilr(
                         &mut region,
@@ -1442,7 +1442,7 @@ mod tests {
                     )?;
                     row += 3; // sum_combine_ilr_gate requires three rows
 
-                    // row = 141
+                    // row = 185
                     config.compression.assign_decompose_word(
                         &mut region,
                         row,

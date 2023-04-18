@@ -453,19 +453,32 @@ impl<F: FieldExt> CompressionConfig<F> {
     }
 
     // For shift = 5..9
-    // s_rotate_left | a_0 |   a_1       | a_2 |  a_3 |    a_4  |    a_5      |
-    //   1           |     | b(16-shift) |     | a_lo | word_lo | rol_word_lo |
-    //               |     | c(16)       |     | a_hi | word_hi | rol_word_hi |
+    // rotate_left_5 on a, b, c words
+    // s_rotate_left | a_0 |   a_1         |   a_2  |    a_3      |    a_4      |    a_5           |
+    //   1           |  1  |  b(16-shift)  |        | a_lo        |             |                  |
+    //               |     |  c(shift)     |        | a_hi        |             |                  |
+    //               |     |               |        | word_lo     |             |                  |
+    //               |     |               |        | word_hi     |             |                  |
+    //               |     |               |        | rol_word_lo |             |                  |
+    //               |     |               |        | rol_word_hi |             |                  |
     // OR
     // For shift = 9..13
-    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3 |    a_4  |    a_5      |
-    //   1           |     | a(shift) |     | b_lo | word_lo | rol_word_lo |
-    //               |     | c(16)    |     | b_hi | word_hi | rol_word_hi |
+    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3        |    a_4      |    a_5      |
+    //   1           |  1  | a(shift) |     | b_lo        |             |             |
+    //               |     | c(16)    |     | b_hi        |             |             |
+    //               |     |          |     | word_lo     |             |             |
+    //               |     |          |     | word_hi     |             |             |
+    //               |     |          |     | rol_word_lo |             |             |
+    //               |     |          |     | rol_word_hi |             |             |
     // OR
     // For shift = 13..16
-    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3 |    a_4  |    a_5      |
-    //   1           |     | a(shift) |     |   b  | word_lo | rol_word_lo |
-    //               |     | c(16)    |     |      | word_hi | rol_word_hi |
+    // s_rotate_left | a_0 |   a_1    | a_2 |  a_3        |    a_4      |    a_5      |
+    //   1           |  1  | a(shift) |     |   b         |             |             |
+    //               |     | c(16)    |     |             |             |             |
+    //               |     |          |     | word_lo     |             |             |
+    //               |     |          |     | word_hi     |             |             |
+    //               |     |          |     | rol_word_lo |             |             |
+    //               |     |          |     | rol_word_hi |             |             |
     pub(super) fn assign_rotate_left(
         &self,
         region: &mut Region<'_, F>,
@@ -481,8 +494,8 @@ impl<F: FieldExt> CompressionConfig<F> {
         self.s_rotate_left[shift as usize - 5].enable(region, row)?;
 
         // Assign and copy word_lo, word_hi
-        word.0.copy_advice(|| "word_lo", region, a_4, row)?;
-        word.1.copy_advice(|| "word_hi", region, a_4, row + 1)?;
+        word.0.copy_advice(|| "word_lo", region, a_3, row + 2)?;
+        word.1.copy_advice(|| "word_hi", region, a_3, row + 3)?;
 
         let rol_word = word
             .value()
@@ -492,13 +505,18 @@ impl<F: FieldExt> CompressionConfig<F> {
         let rol_word_lo: Value<[bool; 16]> = rol_word.map(|q| q[..16].try_into().unwrap());
         let rol_word_hi: Value<[bool; 16]> = rol_word.map(|q| q[16..].try_into().unwrap());
 
-        let rol_word_lo =
-            AssignedBits::<16, F>::assign_bits(region, || "rol_word_lo", a_5, row, rol_word_lo)?;
+        let rol_word_lo = AssignedBits::<16, F>::assign_bits(
+            region,
+            || "rol_word_lo",
+            a_3,
+            row + 4,
+            rol_word_lo,
+        )?;
         let rol_word_hi = AssignedBits::<16, F>::assign_bits(
             region,
             || "rol_word_hi",
-            a_5,
-            row + 1,
+            a_3,
+            row + 5,
             rol_word_hi,
         )?;
 

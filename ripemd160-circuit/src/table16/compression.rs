@@ -360,21 +360,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_5 on a, b, c words
-        // s_rol5 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
-        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        // s_rol5 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo        |             |                  |
+        //        |     |  c       |        | a_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("rotate_left_5", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[0]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
             let b = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let a_lo = meta.query_advice(a_3, Rotation::cur());
-            let a_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let a_lo = meta.query_advice(a_3, Rotation(0));
+            let a_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_5_gate(
                 s_rotate_left,
@@ -391,21 +395,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_6 on a, b, c words
-        // s_rol6 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
-        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        // s_rol6 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo        |             |                  |
+        //        |     |  c       |        | a_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("rotate_left_6", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[1]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
             let b = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let a_lo = meta.query_advice(a_3, Rotation::cur());
-            let a_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let a_lo = meta.query_advice(a_3, Rotation(0));
+            let a_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_6_gate(
                 s_rotate_left,
@@ -422,21 +430,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_7 on a, b, c words
-        // s_rol7 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
-        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        // s_rol7 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo        |             |                  |
+        //        |     |  c       |        | a_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("rotate_left_7", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[2]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
             let b = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let a_lo = meta.query_advice(a_3, Rotation::cur());
-            let a_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let a_lo = meta.query_advice(a_3, Rotation(0));
+            let a_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_7_gate(
                 s_rotate_left,
@@ -453,21 +465,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_8 on a, b, c words
-        // s_rol8 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1    |  1  |  b       |        | a_lo       | word_lo     | rol_word_lo      |
-        //        |     |  c       |        | a_hi       | word_hi     | rol_word_hi      |
+        // s_rol8 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  b       |        | a_lo        |             |                  |
+        //        |     |  c       |        | a_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("rotate_left_8", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[3]);
             let tag_b = meta.query_advice(a_0, Rotation::cur());
             let b = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let a_lo = meta.query_advice(a_3, Rotation::cur());
-            let a_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let a_lo = meta.query_advice(a_3, Rotation(0));
+            let a_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_8_gate(
                 s_rotate_left,
@@ -484,21 +500,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_9 on a, b, c words
-        // s_rol9 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1    |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
-        //        |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        // s_rol9 | a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b_lo        |             |                  |
+        //        |     |  c       |        | b_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_9", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[4]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b_lo = meta.query_advice(a_3, Rotation::cur());
-            let b_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b_lo = meta.query_advice(a_3, Rotation(0));
+            let b_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_9_gate(
                 s_rotate_left,
@@ -515,21 +535,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_10 on a, b, c words
-        // s_rol10 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1     |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
-        //         |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        // s_rol10| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b_lo        |             |                  |
+        //        |     |  c       |        | b_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_10", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[5]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b_lo = meta.query_advice(a_3, Rotation::cur());
-            let b_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b_lo = meta.query_advice(a_3, Rotation(0));
+            let b_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_10_gate(
                 s_rotate_left,
@@ -546,21 +570,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_11 on a, b, c words
-        // s_rol11 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1     |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
-        //         |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        // s_rol11| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b_lo        |             |                  |
+        //        |     |  c       |        | b_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_11", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[6]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b_lo = meta.query_advice(a_3, Rotation::cur());
-            let b_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b_lo = meta.query_advice(a_3, Rotation(0));
+            let b_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_11_gate(
                 s_rotate_left,
@@ -577,21 +605,25 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_12 on a, b, c words
-        // s_rol12 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1     |  1  |  a       |        | b_lo       | word_lo     | rol_word_lo      |
-        //         |     |  c       |        | b_hi       | word_hi     | rol_word_hi      |
+        // s_rol12| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b_lo        |             |                  |
+        //        |     |  c       |        | b_hi        |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_12", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[7]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b_lo = meta.query_advice(a_3, Rotation::cur());
-            let b_hi = meta.query_advice(a_3, Rotation::next());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b_lo = meta.query_advice(a_3, Rotation(0));
+            let b_hi = meta.query_advice(a_3, Rotation(1));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_12_gate(
                 s_rotate_left,
@@ -608,20 +640,24 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_13 on a, b, c words
-        // s_rol13 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1     |  1  |  a       |        | b          | word_lo     | rol_word_lo      |
-        //         |     |  c       |        |            | word_hi     | rol_word_hi      |
+        // s_rol13| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b           |             |                  |
+        //        |     |  c       |        |             |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_13", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[8]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b = meta.query_advice(a_3, Rotation::cur());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b = meta.query_advice(a_3, Rotation(0));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_13_gate(
                 s_rotate_left,
@@ -637,20 +673,24 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_14 on a, b, c words
-        // s_rol14 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1     |  1  |  a       |        | b          | word_lo     | rol_word_lo      |
-        //         |     |  c       |        |            | word_hi     | rol_word_hi      |
+        // s_rol14| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b           |             |                  |
+        //        |     |  c       |        |             |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_14", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[9]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b = meta.query_advice(a_3, Rotation::cur());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b = meta.query_advice(a_3, Rotation(0));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_14_gate(
                 s_rotate_left,
@@ -666,20 +706,24 @@ impl<F: FieldExt> CompressionConfig<F> {
         });
 
         // rotate_left_15 on a, b, c words
-        // s_rol15 | a_0 |   a_1    |   a_2  |    a_3     |    a_4      |    a_5           |
-        //   1     |  1  |  a       |        | b          | word_lo     | rol_word_lo      |
-        //         |     |  c       |        |            | word_hi     | rol_word_hi      |
+        // s_rol15| a_0 |   a_1    |   a_2  |    a_3      |    a_4      |    a_5           |
+        //   1    |  1  |  a       |        | b           |             |                  |
+        //        |     |  c       |        |             |             |                  |
+        //        |     |          |        | word_lo     |             |                  |
+        //        |     |          |        | word_hi     |             |                  |
+        //        |     |          |        | rol_word_lo |             |                  |
+        //        |     |          |        | rol_word_hi |             |                  |
         //
         meta.create_gate("s_rotate_left_15", |meta| {
             let s_rotate_left = meta.query_selector(s_rotate_left[10]);
             let tag_a = meta.query_advice(a_0, Rotation::cur());
             let a = meta.query_advice(a_1, Rotation::cur());
             let c = meta.query_advice(a_1, Rotation::next());
-            let b = meta.query_advice(a_3, Rotation::cur());
-            let word_lo = meta.query_advice(a_4, Rotation::cur());
-            let word_hi = meta.query_advice(a_4, Rotation::next());
-            let rol_word_lo = meta.query_advice(a_5, Rotation::cur());
-            let rol_word_hi = meta.query_advice(a_5, Rotation::next());
+            let b = meta.query_advice(a_3, Rotation(0));
+            let word_lo = meta.query_advice(a_3, Rotation(2));
+            let word_hi = meta.query_advice(a_3, Rotation(3));
+            let rol_word_lo = meta.query_advice(a_3, Rotation(4));
+            let rol_word_hi = meta.query_advice(a_3, Rotation(5));
 
             CompressionGate::rotate_left_15_gate(
                 s_rotate_left,

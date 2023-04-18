@@ -119,14 +119,14 @@ impl<F: FieldExt> CompressionConfig<F> {
         };
 
         let rol = self.assign_rotate_left(region, *row, sum_afxk, rol_shift)?;
-        *row += 2; // rotate_left requires 2 rows
+        *row += 6; // rotate_left requires 6 rows
 
         // T = rol_s(j) ( A + f1(B,C,D) + X[r(idx)] + K(idx/16) ) + E
         let t = self.assign_sum_re(region, *row, rol.into(), e.clone())?;
         *row += 2; // sum_re requires 2 rows
 
         let rol10_c_dense = self.assign_rotate_left(region, *row, c.dense_halves, 10)?;
-        *row += 2; // rotate_left requires 2 rows
+        *row += 6; // rotate_left requires 6 rows
 
         let rol10_c = self.assign_spread_dense_word(region, &self.lookup, *row, rol10_c_dense)?;
         *row += 2; // getting the spread version of rol10_c requires 2 rows

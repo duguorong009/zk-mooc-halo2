@@ -11,7 +11,7 @@ use halo2_proofs::{
 };
 
 mod constants;
-mod ref_impl;
+mod native;
 mod table16;
 
 use constants::{BLOCK_SIZE, DIGEST_SIZE};
@@ -101,7 +101,7 @@ impl<F: FieldExt, Ripemd160Chip: RIPEMD160Instructions<F>> RIPEMD160<F, Ripemd16
 pub mod dev {
     use crate::{
         constants::BLOCK_SIZE_BYTES,
-        ref_impl::pad_message_bytes,
+        native::pad_message_bytes,
         table16::{
             util::{convert_byte_slice_to_blockword_slice, convert_byte_slice_to_u32_slice},
             BlockWord, Table16Chip, Table16Config,

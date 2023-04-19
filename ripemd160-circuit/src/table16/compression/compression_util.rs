@@ -5,7 +5,7 @@ use halo2_proofs::{
 };
 use std::convert::TryInto;
 
-use crate::ref_impl::rol;
+use crate::native::rol;
 use crate::table16::spread_table::{SpreadInputs, SpreadVar, SpreadWord};
 use crate::table16::util::{even_bits, i2lebsp, lebs2ip, negate_spread, odd_bits, sum_with_carry};
 use crate::table16::AssignedBits;

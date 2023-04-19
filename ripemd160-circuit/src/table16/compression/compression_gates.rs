@@ -878,7 +878,7 @@ mod tests {
     use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
     use rand::Rng;
 
-    use crate::ref_impl::*;
+    use crate::native::*;
     use crate::table16::compression::{CompressionConfig, RoundWordDense};
     use crate::table16::spread_table::{SpreadTableChip, SpreadTableConfig};
     use crate::table16::Table16Assignment;
